@@ -61,6 +61,11 @@ TOOLS = [
                         "required": ["query"]},
     },
     {
+        "name": "session_state",
+        "description": "The student's live progress: subject, question position, score, answered count, last request.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "stats",
         "description": "Question counts by subject and type.",
         "inputSchema": {"type": "object", "properties": {}},
@@ -139,6 +144,12 @@ def call(name: str, args: dict) -> dict:
         rows = [{"url": urllib.parse.unquote(u), "title": re.sub(r"<[^>]+>", "", t).strip(),
                  "snippet": re.sub(r"<[^>]+>", "", s).strip()} for u, t, s in hits]
         return text_result(json.dumps(rows, indent=1, ensure_ascii=False) if rows else "no results")
+
+    if name == "session_state":
+        f = DATA / "session.json"
+        if not f.exists():
+            return text_result("no session yet")
+        return text_result(json.dumps(json.loads(f.read_text()), indent=1, ensure_ascii=False))
 
     if name == "stats":
         b = read_bank()
