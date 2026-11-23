@@ -12,6 +12,59 @@ async function api(path, body) {
   return r.json();
 }
 
+
+/* --- offline mode ------------------------------------------------------- */
+const norm = (s) => String(s || "").toLowerCase().replace(/\s+/g, " ").trim().replace(/[.]+$/, "");
+
+function lev(a, b) {
+  if (a === b) return 0;
+  if (!a || !b) return a.length || b.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur.push(Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)));
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+function ratio(a, b) {
+  const m = a.length, n = b.length;
+  if (!m || !n) return 0;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur.push(Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)));
+    }
+    prev = cur;
+  }
+  return 1 - prev[n] / Math.max(m, n);
+}
+
+function localGrade(q, given) {
+  if (q.type === "mcq") {
+    return { correct: norm(given)[0] === String(q.answer).trim().toLowerCase()[0],
+             expected: q.answer, explanation: q.explanation || "", type: "mcq" };
+  }
+  if (q.type === "fib") {
+    const variants = [norm(q.answer), ...(q.accept || []).map(norm)];
+    const tight = new Set(variants.map((v) => v.replace(/ /g, "")));
+    const g = norm(given), gt = g.replace(/ /g, "");
+    if (variants.includes(g) || tight.has(gt)) return { correct: true, expected: q.answer, explanation: q.explanation || "" };
+    for (const v of variants) {
+      if (v.length < 3 || !/[a-z]{3}/.test(v)) continue;
+      const vt = v.replace(/ /g, "");
+      if (vt.length >= 6 && ratio(gt, vt) >= 0.87) return { correct: true, expected: q.answer, explanation: q.explanation || "" };
+      if (vt.length < 6 && lev(gt, vt) <= 1) return { correct: true, expected: q.answer, explanation: q.explanation || "" };
+    }
+    return { correct: false, expected: q.answer, explanation: q.explanation || "" };
+  }
+  return { correct: null, expected: q.answer, explanation: q.explanation || "" };
+}
+
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -50,7 +103,16 @@ function paintScore() {
 
 /* ---------------------------------------------------------------- home */
 async function boot() {
-  state.bank = await api("/api/questions");
+  try {
+    state.bank = await api("/api/questions");
+  } catch (e) {
+    state.offline = true;
+    const r = await fetch("data/bank.json");
+    state.bank = await r.json();
+    $("#offline").classList.remove("hidden");
+    $("#chatinput").disabled = true;
+    $("#chatinput").placeholder = "Jarvis runs on your computer — open the app there to chat";
+  }
   const box = $("#subjects");
   box.innerHTML = "";
   for (const [key, meta] of Object.entries(state.bank.subjects)) {
@@ -154,6 +216,30 @@ async function check() {
   const given = state.answers[item.id] || "";
   if (!given.trim()) return;
 
+  if (item.type === "open" && state.offline) {
+    const guide = item.answer || item.explanation || "No guide for this one.";
+    showFeedback("Answer guide", `${guide}<br><br>Score yourself:`,
+      null, true);
+    const box = document.createElement("div");
+    box.className = "selfgrade";
+    box.innerHTML = `<button data-s="2">Right (2)</button><button data-s="1">Partial (1)</button><button data-s="0">Wrong (0)</button>`;
+    $("#feedback").appendChild(box);
+    box.querySelectorAll("button").forEach((b) => {
+      b.onclick = () => {
+        const sc = Number(b.dataset.s);
+        if (!state.answers[`done-${item.id}`]) {
+          state.asked++; state.answers[`done-${item.id}`] = true;
+          if (sc === 2) { award(true); state.score++; }
+          else if (sc === 1) { state.points += 1; }
+          else { award(false); }
+        }
+        paintScore();
+        box.remove();
+      };
+    });
+    return;
+  }
+
   if (item.type === "open") {
     showFeedback("", "Sent to Jarvis for grading…", null, true);
     showTyping("grade");
@@ -181,7 +267,8 @@ async function check() {
     return;
   }
 
-  const res = await api("/api/answer", { id: item.id, answer: given });
+  const res = state.offline ? localGrade(item, given)
+    : await api("/api/answer", { id: item.id, answer: given });
   let delta = "";
   if (!state.answers[`done-${item.id}`]) {
     state.asked++;
