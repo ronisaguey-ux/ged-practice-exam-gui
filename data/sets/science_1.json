@@ -1,0 +1,92 @@
+[
+ {
+  "title": "How a leaf captures light",
+  "passage": "A leaf is a solar collector. Inside its cells, chloroplasts contain chlorophyll, a pigment that absorbs mostly red and blue light and reflects green — which is why leaves look green. Absorbed light energy drives photosynthesis, the process that combines carbon dioxide from the air with water drawn up from the roots to produce glucose and oxygen. The overall reaction is often written as six carbon dioxide molecules plus six water molecules, in the presence of light, yielding one glucose molecule and six oxygen molecules. The glucose is either used immediately for cellular respiration or stored as starch. Oxygen, a by-product, diffuses out through tiny pores called stomata, which also let carbon dioxide in. Stomata open and close in response to light, water supply and carbon dioxide levels; on a hot, dry afternoon a plant may close them to conserve water, which slows photosynthesis even though sunlight is abundant. This is why growth can stall in bright weather when soil moisture is low.",
+  "questions": [
+   {"prompt": "Why do leaves appear green?",
+    "options": ["Chlorophyll reflects green light", "Chlorophyll absorbs green light", "Leaves contain no pigment", "Stomata are green"],
+    "answer": "A",
+    "explanation": "Chlorophyll absorbs red and blue light and reflects green, which reaches our eyes."},
+   {"prompt": "Which two raw materials does photosynthesis combine?",
+    "options": ["Oxygen and glucose", "Carbon dioxide and water", "Nitrogen and water", "Glucose and starch"],
+    "answer": "B",
+    "explanation": "The passage describes carbon dioxide from air combining with water from the roots."},
+   {"prompt": "Why can growth slow on a hot, dry afternoon despite bright sunlight?",
+    "options": ["Chlorophyll breaks down in light", "Stomata close to save water, limiting carbon dioxide intake", "Roots stop absorbing water at noon", "Oxygen blocks photosynthesis"],
+    "answer": "B",
+    "explanation": "Closing stomata conserves water but also restricts the carbon dioxide needed for photosynthesis."}
+  ]
+ },
+ {
+  "title": "Why antibiotic resistance spreads",
+  "passage": "Bacteria reproduce quickly, and a single cell can give rise to billions in a day. Copying DNA that many times produces occasional errors, called mutations, and some of those errors happen to make a bacterium less vulnerable to a particular antibiotic. When a patient takes that antibiotic, susceptible bacteria die while the resistant ones survive and multiply. The drug does not teach the bacteria anything; it simply removes their competition. Resistance therefore spreads fastest where antibiotics are used most — in hospitals, in intensive livestock operations, and when people take antibiotics for viral infections that the drugs cannot treat. Because bacteria can also pass resistance genes directly to one another on small loops of DNA called plasmids, a trait that arises in one species can appear in another. Public health guidance follows directly from this: prescribe antibiotics only when a bacterial infection is confirmed, finish prescribed courses, and reduce unnecessary use in agriculture.",
+  "questions": [
+   {"prompt": "How does an antibiotic cause resistant bacteria to become more common?",
+    "options": ["It teaches bacteria to resist", "It kills susceptible bacteria, leaving resistant ones to multiply", "It mutates every bacterium", "It stops bacteria from reproducing"],
+    "answer": "B",
+    "explanation": "Selection removes competitors, so the resistant survivors reproduce and dominate."},
+   {"prompt": "What role do plasmids play according to the passage?",
+    "options": ["They store water", "They let bacteria pass resistance genes to one another", "They digest antibiotics", "They cause viral infections"],
+    "answer": "B",
+    "explanation": "Plasmids are small DNA loops that can carry resistance genes between bacteria, even across species."},
+   {"prompt": "Which practice would most slow the spread of resistance?",
+    "options": ["Using antibiotics for viral colds", "Prescribing antibiotics only for confirmed bacterial infections", "Giving larger doses to livestock", "Sharing leftover antibiotics"],
+    "answer": "B",
+    "explanation": "Reducing unnecessary use removes the selection pressure that favors resistant strains."}
+  ]
+ },
+ {
+  "title": "Energy without oxygen",
+  "passage": "Cells normally release energy from glucose through cellular respiration, which uses oxygen and produces carbon dioxide and water. During hard exercise, muscles may need energy faster than oxygen can be delivered. At that point muscle cells switch to a form of anaerobic metabolism called lactic acid fermentation, which breaks glucose partway and produces lactate. The process yields far less energy per glucose molecule than respiration, which is why intense activity cannot be sustained for long. The lactate builds up and contributes to the burning sensation in tired muscles, though it is cleared and recycled once oxygen is available again. Yeasts use a related pathway, alcoholic fermentation, converting glucose into ethanol and carbon dioxide; that reaction is what makes bread rise and what produces alcohol in brewing. In both cases the organism's goal is the same: keep generating usable energy when oxygen is scarce, even at a steep cost in efficiency.",
+  "questions": [
+   {"prompt": "Why do muscles switch to fermentation during hard exercise?",
+    "options": ["Oxygen is delivered slower than energy is needed", "Glucose runs out immediately", "Lactate is toxic to cells", "Respiration stops permanently"],
+    "answer": "A",
+    "explanation": "The passage says muscles need energy faster than oxygen can be delivered."},
+   {"prompt": "How does fermentation compare with respiration in energy yield?",
+    "options": ["It yields more energy", "It yields far less energy per glucose", "It yields the same", "It yields no energy"],
+    "answer": "B",
+    "explanation": "Fermentation breaks glucose only partway, producing much less usable energy."},
+   {"prompt": "Which observation links yeast fermentation to everyday life?",
+    "options": ["It produces oxygen that we breathe", "It produces carbon dioxide that makes bread rise", "It produces lactate in bread", "It stops when oxygen is present"],
+    "answer": "B",
+    "explanation": "Alcoholic fermentation releases carbon dioxide, which leavens bread."}
+  ]
+ },
+ {
+  "title": "Energy flow through a food web",
+  "passage": "In a grassland, grasses capture sunlight and store energy in sugars. Grasshoppers eat the grass, frogs eat the grasshoppers, and snakes eat the frogs. At each step, most of the energy is not passed on: organisms use much of it for their own metabolism, and a large fraction is lost as heat. Ecologists estimate that only about ten percent of the energy in one level moves to the next, which is why food chains rarely have more than four or five links and why top predators are far fewer in number than the plants they ultimately depend on. Matter behaves differently from energy. Atoms of carbon, nitrogen and phosphorus are recycled continuously by decomposers, which break down dead organisms and return nutrients to the soil. A grassland can therefore run indefinitely on the same atoms, but it cannot recycle the energy that continually arrives from the sun and continually leaves as heat.",
+  "questions": [
+   {"prompt": "Why are there few top predators in an ecosystem?",
+    "options": ["They reproduce faster than prey", "Only about ten percent of energy passes to each higher level", "They need no energy", "They eat plants"],
+    "answer": "B",
+    "explanation": "With roughly 10 percent transfer, higher levels have far less energy available."},
+   {"prompt": "What do decomposers do in this system?",
+    "options": ["Convert sunlight into sugar", "Recycle nutrients from dead organisms", "Produce heat for predators", "Create new energy"],
+    "answer": "B",
+    "explanation": "They break down dead organisms and return nutrients such as carbon and nitrogen to the soil."},
+   {"prompt": "How does matter differ from energy in an ecosystem?",
+    "options": ["Matter is recycled; energy flows through and is lost as heat", "Matter is created by predators", "Energy is recycled; matter is lost", "Neither is conserved"],
+    "answer": "A",
+    "explanation": "Atoms are recycled by decomposers, while energy arrives from the sun and leaves as heat."}
+  ]
+ },
+ {
+  "title": "How vaccines train the immune system",
+  "passage": "The immune system recognizes invaders by the distinctive molecules on their surfaces, called antigens. After a real infection, the body produces antibodies and memory cells that recognize that antigen, so a second exposure is fought off quickly. A vaccine exploits this memory without the danger of a real infection: it presents a harmless piece of a pathogen — an inactivated form, a fragment of protein, or instructions for making one — so the immune system builds antibodies and memory cells without the disease. Because memory cells persist, protection can last for years, and some vaccines require periodic boosters as antibody levels fall. When a large share of a population is immune, a pathogen has trouble finding new hosts, which protects people who cannot be vaccinated, such as infants or those with weakened immune systems. This indirect protection is called herd immunity, and it depends on high vaccination coverage.",
+  "questions": [
+   {"prompt": "What does a vaccine present to the immune system?",
+    "options": ["A live, fully active pathogen", "A harmless piece or inactive form of a pathogen", "An antibiotic", "A memory cell from another person"],
+    "answer": "B",
+    "explanation": "Vaccines use inactivated forms or fragments so immunity develops without disease."},
+   {"prompt": "Why are boosters sometimes needed?",
+    "options": ["Antibody levels can fall over time", "Memory cells never form", "Vaccines expire inside the body", "Antigens change daily"],
+    "answer": "A",
+    "explanation": "The passage notes boosters are needed as antibody levels decline."},
+   {"prompt": "What is herd immunity?",
+    "options": ["Immunity acquired only by infection", "Indirect protection when enough people are immune", "A vaccine given to animals", "Immunity that lasts one season"],
+    "answer": "B",
+    "explanation": "When most of a population is immune, spread slows and unvaccinated people are indirectly protected."}
+  ]
+ }
+]

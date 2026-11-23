@@ -1,0 +1,92 @@
+[
+ {
+  "title": "Newton's laws in a crash test",
+  "passage": "A crash test sled carries an instrumented dummy into a rigid barrier at thirty-five miles per hour. Engineers film the event at a thousand frames per second and record the forces on the dummy's head and chest. The first law explains the dummy's motion: it continues forward at the sled's speed until the seat belt and airbag exert forces to slow it. The second law, force equals mass times acceleration, tells engineers how large those forces must be: the heavier the dummy and the shorter the stopping distance, the larger the force. Extending the stopping time with a crumple zone or a belt that stretches reduces acceleration and therefore reduces force. The third law appears at the barrier: the sled pushes the wall forward with the same force the wall exerts backward, which is why the barrier must be anchored. Engineers compare the recorded forces against injury thresholds rather than judging the test by how badly the vehicle is damaged.",
+  "questions": [
+   {"prompt": "Why does the dummy keep moving when the sled stops?",
+    "options": ["Gravity pulls it forward", "It continues at its speed until a force slows it (first law)", "The seat belt pushes it", "Air resistance increases"],
+    "answer": "B",
+    "explanation": "Inertia keeps the dummy moving until the belt and airbag apply a stopping force."},
+   {"prompt": "How does a crumple zone reduce injury?",
+    "options": ["It increases the vehicle's mass", "It lengthens the stopping time, lowering acceleration and force", "It removes friction", "It pushes the barrier"],
+    "answer": "B",
+    "explanation": "Longer stopping time means smaller acceleration, and force equals mass times acceleration."},
+   {"prompt": "Which measurement matters most when judging the test?",
+    "options": ["Vehicle damage", "Forces on the dummy compared with injury thresholds", "Top speed", "Barrier thickness"],
+    "answer": "B",
+    "explanation": "The passage says engineers compare recorded forces against injury thresholds, not damage."}
+  ]
+ },
+ {
+  "title": "Density, buoyancy and why ships float",
+  "passage": "Density is mass per unit volume, and it decides whether an object sinks, floats, or hovers. A steel bolt sinks because steel is several times denser than water. A steel ship floats because the ship is mostly empty space: its total mass divided by the volume of water it displaces is less than the density of water. Archimedes' principle states that a floating object displaces a weight of fluid equal to its own weight, so a heavily loaded ship rides lower in the water. The same principle explains why an egg floats in very salty water and sinks in fresh water — dissolved salt raises the water's density, so the egg displaces less of it. Submarines control depth by taking on or expelling water ballast, changing their average density. Ice floats because water expands as it freezes, making solid ice about nine percent less dense than the liquid it came from.",
+  "questions": [
+   {"prompt": "Why does a steel ship float while a steel bolt sinks?",
+    "options": ["Ships are made of a lighter metal", "A ship's overall density is less than water's because it is mostly empty space", "Water repels large objects", "Bolts are magnetic"],
+    "answer": "B",
+    "explanation": "Total mass over displaced volume is what matters, and a hull encloses mostly air."},
+   {"prompt": "Why does an egg float in very salty water?",
+    "options": ["Salt dissolves the shell", "Salt raises water density, so the egg displaces less water", "The egg becomes heavier", "Salt water is colder"],
+    "answer": "B",
+    "explanation": "Higher fluid density means the egg floats with less displaced volume."},
+   {"prompt": "How does a submarine change depth?",
+    "options": ["By changing its shape", "By taking on or expelling water ballast to change average density", "By heating the water", "By spinning its propeller faster"],
+    "answer": "B",
+    "explanation": "Ballast water changes average density, letting the boat sink or rise."}
+  ]
+ },
+ {
+  "title": "Conservation of mass in a sealed reaction",
+  "passage": "When vinegar and baking soda react in an open cup, the mixture fizzes and the cup feels cooler. The fizz is carbon dioxide escaping into the air, and the cooling shows the reaction is endothermic — it absorbs energy from its surroundings. If the same reaction is run inside a sealed bag on a balance, the total mass before and after is identical. Atoms are not created or destroyed in a chemical reaction; they are rearranged. The carbon, hydrogen, oxygen and sodium that made up the vinegar and baking soda end up in sodium acetate, water and carbon dioxide, with the same number of each kind of atom on both sides of the equation. In the open cup the mass appears to drop only because the carbon dioxide leaves the system. Chemists write balanced equations for exactly this reason: a correct equation has equal numbers of each atom on each side, which is conservation of mass written in symbols.",
+  "questions": [
+   {"prompt": "Why does the sealed bag keep the same mass?",
+    "options": ["No reaction occurs", "Atoms are rearranged, and the gas stays inside", "The bag absorbs the gas", "Mass is created by the reaction"],
+    "answer": "B",
+    "explanation": "Conservation of mass holds because the gas cannot escape the sealed system."},
+   {"prompt": "What does the cooling of the cup indicate?",
+    "options": ["The reaction is endothermic", "The reaction is exothermic", "No energy is involved", "The vinegar evaporated"],
+    "answer": "A",
+    "explanation": "Absorbing energy from the surroundings lowers their temperature — endothermic."},
+   {"prompt": "Why must a chemical equation be balanced?",
+    "options": ["To look neat", "Because the number of each kind of atom is conserved", "To make the reaction faster", "Because gases are invisible"],
+    "answer": "B",
+    "explanation": "Balancing records the conservation of atoms from reactants to products."}
+  ]
+ },
+ {
+  "title": "Series and parallel circuits",
+  "passage": "In a series circuit, components are connected one after another so there is a single path for current. The same current passes through every component, and the total resistance is the sum of the individual resistances. If one bulb in a string of series bulbs burns out, the path is broken and every bulb goes dark. In a parallel circuit, each component has its own path back to the source. The voltage across each branch is the same, the current splits among the branches, and the total resistance is lower than the smallest individual resistance. A burned-out bulb in one branch leaves the others lit — which is why household wiring is parallel. Adding branches increases the total current drawn from the supply, which is why plugging too many devices into one circuit can trip a breaker. Ohm's law, voltage equals current times resistance, links these quantities in each branch and in the circuit as a whole.",
+  "questions": [
+   {"prompt": "Why does one burned-out bulb darken an entire series string?",
+    "options": ["Series bulbs share voltage equally", "The single path for current is broken", "Resistance drops to zero", "The battery reverses"],
+    "answer": "B",
+    "explanation": "A series circuit has only one path, so a break stops current everywhere."},
+   {"prompt": "Why is household wiring parallel?",
+    "options": ["It uses less copper", "Each device has its own path, so one failure does not stop the others", "It keeps voltage equal to zero", "It increases resistance"],
+    "answer": "B",
+    "explanation": "Parallel branches operate independently and share the same source voltage."},
+   {"prompt": "Why can too many devices trip a breaker?",
+    "options": ["Each branch adds resistance", "Adding parallel branches increases total current", "Voltage rises with each device", "Breakers measure resistance only"],
+    "answer": "B",
+    "explanation": "More parallel paths draw more total current from the supply."}
+  ]
+ },
+ {
+  "title": "Heat transfer and home insulation",
+  "passage": "Heat moves from warmer regions to cooler ones by three routes. Conduction transfers energy through direct contact, as when a metal spoon warms in hot soup; metals conduct well because free electrons carry energy quickly. Convection moves heat with a fluid: warm air rises, cools, sinks and circulates, which is why a radiator heats a whole room rather than only the air touching it. Radiation carries energy as electromagnetic waves and needs no medium at all, which is how the Sun warms the Earth across empty space. Insulation works by interfering with all three. Fiberglass traps air in tiny pockets, limiting convection and slowing conduction; reflective foil reduces radiative transfer; sealing gaps stops warm air from escaping. A well-insulated house does not generate heat, it simply slows its loss, so the same furnace keeps the rooms warmer at lower cost.",
+  "questions": [
+   {"prompt": "How does heat travel from the Sun to Earth?",
+    "options": ["Conduction", "Convection", "Radiation", "Evaporation"],
+    "answer": "C",
+    "explanation": "Radiation needs no medium, so it crosses empty space."},
+   {"prompt": "Why does fiberglass insulation work?",
+    "options": ["It generates heat", "It traps air in pockets, slowing conduction and convection", "It reflects all light", "It conducts heat quickly"],
+    "answer": "B",
+    "explanation": "Trapped air limits both conduction and the convection currents that move heat."},
+   {"prompt": "Why does a radiator warm a whole room?",
+    "options": ["Conduction through the floor", "Convection currents circulate warm air", "Radiation only", "The radiator absorbs cold"],
+    "answer": "B",
+    "explanation": "Warm air rises and cooler air sinks, setting up a circulating convection current."}
+  ]
+ }
+]
