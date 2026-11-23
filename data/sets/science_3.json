@@ -1,0 +1,92 @@
+[
+ {
+  "title": "Plate boundaries and earthquakes",
+  "passage": "Earth's outer shell is broken into plates that move a few centimeters a year on the partially molten rock beneath them. Where two plates pull apart at a divergent boundary, magma rises and new ocean floor forms, as along the Mid-Atlantic Ridge. Where an ocean plate meets a continental plate at a convergent boundary, the denser ocean plate descends into the mantle in a process called subduction, producing a deep trench offshore and a chain of volcanoes inland; the Pacific Ring of Fire follows one such boundary. Where plates slide past each other at a transform boundary, as along the San Andreas Fault, the rock stores elastic energy until it ruptures, releasing it as an earthquake. Seismographs record the arrival of P waves, which travel through solids and liquids, and S waves, which cannot pass through liquid. The gap between their arrival times tells seismologists how far away the quake occurred, and readings from three stations locate it.",
+  "questions": [
+   {"prompt": "What happens at a divergent boundary?",
+    "options": ["Plates collide and one subducts", "Magma rises and new crust forms", "Plates slide past each other", "Crust is destroyed"],
+    "answer": "B",
+    "explanation": "Divergent boundaries spread apart, letting magma rise and create new ocean floor."},
+   {"prompt": "Why do volcanoes form inland of a subduction zone?",
+    "options": ["Ocean water erupts", "The descending plate melts and magma rises", "Earthquakes crack the surface", "Wind deposits ash"],
+    "answer": "B",
+    "explanation": "Subduction melts material that rises as magma, feeding volcanoes behind the trench."},
+   {"prompt": "How do seismologists locate an earthquake?",
+    "options": ["From a single seismograph", "From the P–S arrival gap at three stations", "By measuring wind speed", "By sampling groundwater"],
+    "answer": "B",
+    "explanation": "The P–S gap gives distance; three stations triangulate the location."}
+  ]
+ },
+ {
+  "title": "A watershed and the water cycle",
+  "passage": "A watershed is all the land that drains into a single river system. Rain that falls on a hillside either soaks into the soil, where it may recharge groundwater, or runs off the surface into streams. Vegetation and porous soil slow runoff and let water infiltrate; pavement and compacted ground do the opposite, sending water quickly into storm drains and raising flood peaks downstream. Water also returns to the atmosphere by evaporation from lakes and soil and by transpiration from plants, condenses into clouds, and falls again as precipitation. Because a watershed is connected, an activity uphill affects water downhill: fertilizer spread on a farm can travel into a reservoir that supplies a city. Communities therefore manage land use across an entire watershed — protecting wetlands, limiting paving, and planting buffer strips along streams — rather than regulating only the river itself.",
+  "questions": [
+   {"prompt": "What is a watershed?",
+    "options": ["A reservoir", "All the land draining into one river system", "A type of wetland", "A storm drain"],
+    "answer": "B",
+    "explanation": "The passage defines it as all the land that drains into a single river system."},
+   {"prompt": "How does paving change runoff?",
+    "options": ["It increases infiltration", "It speeds runoff and raises flood peaks", "It stops rain from falling", "It filters pollutants"],
+    "answer": "B",
+    "explanation": "Pavement prevents infiltration, so water rushes to drains and downstream flooding grows."},
+   {"prompt": "Why must land use be managed across the whole watershed?",
+    "options": ["Because water flows downhill, connecting upstream and downstream", "Because rivers are independent", "Because soil never moves", "Because groundwater is separate from streams"],
+    "answer": "A",
+    "explanation": "Anything applied uphill can reach the reservoir downstream, so management must cover the whole area."}
+  ]
+ },
+ {
+  "title": "Reading rock layers",
+  "passage": "Sedimentary rock forms in layers, and in undisturbed sequences each layer is older than the one above it — the principle of superposition. Fossils within the layers record which organisms lived when, and because particular species existed for limited spans of time, a distinctive fossil can mark the same age at sites far apart. Geologists also use cross-cutting relationships: a fault or an igneous intrusion that cuts through layers must be younger than the layers it cuts. Unconformities, surfaces where layers are missing, record intervals of erosion or nondeposition and are read as gaps in the record. Together these rules let geologists build a relative timeline without any radiometric dating. Where volcanic ash is present, radiometric methods can assign absolute ages, tying the relative sequence to a calendar of millions of years.",
+  "questions": [
+   {"prompt": "Which layer is oldest in an undisturbed sequence?",
+    "options": ["The top layer", "The bottom layer", "The thickest layer", "The layer with most fossils"],
+    "answer": "B",
+    "explanation": "Superposition says lower layers were deposited first, so the bottom is oldest."},
+   {"prompt": "What does an igneous intrusion cutting across layers tell you?",
+    "options": ["The intrusion is older than the layers", "The intrusion is younger than the layers it cuts", "The layers formed at the same time", "Nothing about age"],
+    "answer": "B",
+    "explanation": "Cross-cutting relationships mean the feature doing the cutting is younger."},
+   {"prompt": "What is an unconformity?",
+    "options": ["A gap in the rock record from erosion or nondeposition", "A type of fossil", "A volcanic layer", "A fault line"],
+    "answer": "A",
+    "explanation": "An unconformity marks missing time in the sequence."}
+  ]
+ },
+ {
+  "title": "The greenhouse effect",
+  "passage": "Sunlight passes through the atmosphere mostly as visible light and warms Earth's surface. The surface then radiates energy back outward as infrared radiation, which is absorbed by certain gases — water vapor, carbon dioxide, methane and nitrous oxide — and re-emitted in all directions, including back toward the surface. This is the greenhouse effect, and without it Earth's average temperature would be well below freezing. The concern is not the effect itself but its strengthening. Burning coal, oil and natural gas moves carbon that was stored underground into the atmosphere as carbon dioxide, while deforestation removes trees that would otherwise absorb it. Measurements from Mauna Loa show atmospheric carbon dioxide rising from about 315 parts per million in 1960 to more than 420 today. Climate models that include this increase reproduce the observed warming of roughly one degree Celsius, and the pattern of warming — more at night, more in the Arctic — matches what greenhouse gases predict.",
+  "questions": [
+   {"prompt": "Why is the greenhouse effect itself necessary?",
+    "options": ["It cools the planet", "Without it Earth would be far below freezing", "It blocks sunlight", "It creates oxygen"],
+    "answer": "B",
+    "explanation": "The passage notes the average temperature would be well below freezing without it."},
+   {"prompt": "What is the main human contribution described?",
+    "options": ["Adding carbon dioxide by burning fossil fuels and clearing forests", "Releasing water vapor from oceans", "Increasing volcanic activity", "Changing Earth's orbit"],
+    "answer": "A",
+    "explanation": "Burning fossil fuels and deforestation both add carbon dioxide to the atmosphere."},
+   {"prompt": "Which observation supports the greenhouse explanation?",
+    "options": ["Warming is uniform across the day and the globe", "Warming is greater at night and in the Arctic", "CO2 levels are falling", "Models cannot reproduce observed warming"],
+    "answer": "B",
+    "explanation": "The predicted pattern — more warming at night and in the Arctic — matches observations."}
+  ]
+ },
+ {
+  "title": "Moon phases and tides",
+  "passage": "The Moon shines by reflected sunlight, and as it orbits Earth we see varying portions of its sunlit half. At new moon the Moon is between Earth and the Sun, so its lit side faces away from us. About a week later, at first quarter, we see half of the lit side. At full moon Earth is between the Sun and the Moon, so the entire sunlit half faces us. The cycle takes about 29.5 days. The Moon's gravity also raises tides. Because gravity weakens with distance, the side of Earth nearer the Moon is pulled slightly more strongly than the far side, producing two bulges of water. As Earth rotates through these bulges, coastal areas experience two high and two low tides each day. When the Sun and Moon line up at new and full moon, their pulls reinforce each other and the range is largest — spring tides. When they are at right angles, the range is smallest — neap tides.",
+  "questions": [
+   {"prompt": "Why does the Moon appear to change shape?",
+    "options": ["Earth's shadow falls on it nightly", "We see different portions of its sunlit half as it orbits", "Clouds cover parts of it", "It produces less light over the month"],
+    "answer": "B",
+    "explanation": "The phases come from our changing view of the sunlit half, not Earth's shadow."},
+   {"prompt": "Why are there two high tides a day?",
+    "options": ["The Moon orbits twice daily", "Earth rotates through two tidal bulges", "The Sun pulls twice as hard", "Winds push water ashore"],
+    "answer": "B",
+    "explanation": "Two bulges exist — one facing the Moon and one opposite — and rotation carries coasts through both."},
+   {"prompt": "When are tides largest?",
+    "options": ["At first and third quarter", "At new and full moon, when Sun and Moon align", "When the Moon is farthest away", "At noon"],
+    "answer": "B",
+    "explanation": "Aligned pulls reinforce each other, producing spring tides at new and full moon."}
+  ]
+ }
+]
