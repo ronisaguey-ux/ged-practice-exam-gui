@@ -336,7 +336,10 @@ def main() -> None:
         normalise_fib(q)
         old = prev.get(q["id"])
         if old:
-            for field in ("option_notes", "variant", "source", "due", "passage", "set"):
+            fields = ["option_notes", "variant", "source", "due"]
+            if q["subject"] in ("social_studies", "math"):
+                fields += ["passage", "set"]   # generated, not parsed from the source
+            for field in fields:
                 if old.get(field) and not q.get(field):
                     q[field] = old[field]
             if q["type"] == "fib" and len(old.get("accept") or []) > len(q.get("accept") or []):
