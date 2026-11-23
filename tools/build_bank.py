@@ -98,6 +98,18 @@ def parse_science_sets(block: list[str], answers: dict[int, tuple[str, str]]) ->
                 elif block[i].strip():
                     text.append(block[i].strip())
                 i += 1
+            if len(opts) < 4 and opts and re.search(r"[B-D]\)", opts[0]):
+                inline = re.findall(r"([A-D])\)\s*([^A-D]*?)(?=\s+[A-D]\)|$)", opts[0])
+                if len(inline) >= 4:
+                    opts = [f"{k}) {v.strip()}" for k, v in inline[:4]]
+            if len(opts) < 4:
+                # some items list A) .. D) inline on one line
+                joined = " ".join(text)
+                inline = re.findall(r"([A-D])\)\s*([^A-D]*?)(?=\s+[A-D]\)|$)", joined)
+                if len(inline) >= 4:
+                    stem = re.split(r"\s+[A-D]\)", joined)[0].strip()
+                    text = [stem]
+                    opts = [f"{k}) {v.strip()}" for k, v in inline[:4]]
             letter, expl = answers.get(qn, ("", ""))
             qtype = "mcq" if len(opts) == 4 else "open"
             out.append({
@@ -294,6 +306,15 @@ def main() -> None:
     rla += parse_rla_extra(rla_tail[:cut], parse_answers(rla_tail[cut:]))
     add_ids(science, "sci")
     add_ids(rla, "rla")
+    # keep notes, accepted variants and Jarvis-made variants from the previous bank
+    prev = {}
+    if OUT.exists():
+        try:
+            old = json.loads(OUT.read_text())
+            prev = {q["id"]: q for q in old.get("questions", [])}
+        except Exception:
+            prev = {}
+
     clean, seen = [], set()
     for q in science + math + rla + soc:
         if q["id"] in seen or len(q["prompt"]) < 12:
@@ -305,7 +326,19 @@ def main() -> None:
                 q["type"] = "open"
                 q["options"] = []
         normalise_fib(q)
+        old = prev.get(q["id"])
+        if old:
+            for field in ("option_notes", "variant", "source", "due"):
+                if old.get(field) and not q.get(field):
+                    q[field] = old[field]
+            if q["type"] == "fib" and len(old.get("accept") or []) > len(q.get("accept") or []):
+                q["accept"] = old["accept"]
         clean.append(q)
+
+    for q in prev.values():
+        if q.get("variant") and q["id"] not in seen:
+            clean.append(q)
+            seen.add(q["id"])
 
     merge_images(clean)
 
