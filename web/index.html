@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GED Practice</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="dot"></span> GED Practice</div>
+  <div class="top-right">
+    <span id="score" class="pill">0 / 0</span>
+    <button id="btn-home" class="ghost">Subjects</button>
+    <button id="btn-tutor" class="ghost">Jarvis</button>
+  </div>
+</header>
+
+<main id="home" class="home">
+  <h1>Pick a subject</h1>
+  <p class="sub">Passages, tables and diagrams are part of the question — read them first.</p>
+  <div id="subjects" class="cards"></div>
+</main>
+
+<main id="test" class="test hidden">
+  <section class="left">
+    <div class="bar">
+      <button id="btn-prev" class="ghost">←</button>
+      <div class="progress"><div id="fill"></div></div>
+      <span id="counter" class="pill">1 / 1</span>
+      <button id="btn-next" class="ghost">→</button>
+    </div>
+    <article class="card">
+      <div id="setline" class="setline hidden"></div>
+      <div id="stimulus" class="stimulus hidden">
+        <img id="image" class="qimg hidden" alt="diagram">
+        <p id="passage"></p>
+      </div>
+      <h2 id="prompt">…</h2>
+      <div id="answerbox"></div>
+      <div class="actions">
+        <button id="btn-check" class="primary">Check</button>
+        <button id="btn-hint" class="ghost">Hint</button>
+        <button id="btn-why" class="ghost">Why?</button>
+      </div>
+      <div id="feedback" class="feedback hidden"></div>
+    </article>
+  </section>
+
+  <aside id="tutor" class="tutor">
+    <div class="tutor-head">
+      <strong>Jarvis</strong><span class="pill tiny" id="tutor-state">ready</span>
+    </div>
+    <div id="chatlog" class="chatlog">
+      <div class="msg bot">Ask me anything about this question.</div>
+    </div>
+    <form id="chatform" class="chatform">
+      <input id="chatinput" placeholder="Ask Jarvis…" autocomplete="off">
+      <button class="primary" type="submit">Send</button>
+    </form>
+  </aside>
+</main>
+
+<main id="summary" class="home hidden">
+  <h1>Session done</h1>
+  <p class="sub" id="summaryline"></p>
+  <button class="primary" onclick="location.reload()">Start again</button>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
