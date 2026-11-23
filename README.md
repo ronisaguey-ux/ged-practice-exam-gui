@@ -7,6 +7,19 @@ mistakes, and can fix the question bank while you use it.
 No frameworks, no build step, no CDN. Python stdlib for the server, plain
 HTML/CSS/JS for the UI.
 
+## Live copy
+
+**https://ged-practice-rs.surge.sh** — static build, works on a phone, no index
+(meta noindex + Surge's own `robots.txt` is `Disallow: /`). Offline it grades
+mcq and fill-in locally and shows the answer guide for open questions; Jarvis
+answers only when the app is running on your computer.
+
+Rebuild and redeploy with:
+
+```bash
+python3 tools/build_site.py && surge site ged-practice-rs.surge.sh
+```
+
 ## Run it
 
 ```bash
