@@ -47,6 +47,8 @@ def call(prompt: str) -> list[str] | None:
             text = (text.get("content") or "") + (text.get("reasoning") or "")
         except Exception as exc:  # noqa: BLE001
             print("call failed:", exc, file=sys.stderr)
+            if "429" in str(exc):
+                time.sleep(25)
             continue
         m = re.search(r"\{.*\}", text, re.S)
         if not m:
@@ -79,7 +81,7 @@ def main() -> None:
         if done % 5 == 0:
             BANK.write_text(json.dumps(bank, separators=(",", ":"), ensure_ascii=False))
             print(f"{done}/{len(todo)}", flush=True)
-        time.sleep(0.3)
+        time.sleep(1.4)
     BANK.write_text(json.dumps(bank, separators=(",", ":"), ensure_ascii=False))
     print("done", done, flush=True)
 
