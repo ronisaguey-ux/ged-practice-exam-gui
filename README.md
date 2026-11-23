@@ -7,6 +7,17 @@ mistakes, and can fix the question bank while you use it.
 No frameworks, no build step, no CDN. Python stdlib for the server, plain
 HTML/CSS/JS for the UI.
 
+## Live copy (private)
+
+Password: `Mongosged999`. The site is noindex and Surge's own `robots.txt` is
+`Disallow: /`, so it will not be listed anywhere.
+
+The web build talks to the local server through a Cloudflare tunnel
+(`https://ged.helpotron.dpdns.org`), so hints, grading and chat still reach
+Jarvis from anywhere. Limits: 10 failed logins per minute per IP, 300 requests
+per minute otherwise. Saved runs per subject are kept on the server and offered
+back as "resume" on the subject card.
+
 ## Live copy
 
 **https://ged-practice-rs.surge.sh** — static build, works on a phone, no index
@@ -53,6 +64,11 @@ ged --stop        # stop server + Jarvis
 - Open answers graded 1/2 earn a flat +1 (partial credit) and keep the streak.
 - Skipping costs a flat **−3** and keeps the streak. You cannot move past an
   unanswered question without confirming the skip in a popup.
+
+## Modes
+
+Math, Science, Social Studies, RLA, and **Mega** — all four subjects shuffled
+together.
 
 ## Question types
 
