@@ -4,3 +4,6 @@ data/requests/
 data/replies/
 *.log
 site/
+data/session.json
+data/sessions/
+data/variant_jobs.jsonl

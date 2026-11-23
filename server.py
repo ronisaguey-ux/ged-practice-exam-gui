@@ -11,6 +11,7 @@ import difflib
 import json
 import os
 import random
+import collections
 import re
 import subprocess
 import threading
@@ -30,6 +31,17 @@ PORT = int(os.environ.get("GED_PORT", "8765"))
 REQ.mkdir(parents=True, exist_ok=True)
 REP.mkdir(parents=True, exist_ok=True)
 VJOBS = DATA / "variant_jobs.jsonl"
+SESSIONS = DATA / "sessions"
+SESSIONS.mkdir(parents=True, exist_ok=True)
+PASSWORD = os.environ.get("GED_PASS", "Mongosged999")
+RATE_LIMIT = int(os.environ.get("GED_RATE", "10"))      # writes per minute
+READ_LIMIT = int(os.environ.get("GED_READ_RATE", "120"))  # reads per minute
+HITS: dict[str, collections.deque] = {}
+ALLOWED_ORIGINS = {
+    "https://ged-practice-rs.surge.sh",
+    "http://127.0.0.1:8765",
+    "http://localhost:8765",
+}
 
 BANK: dict = {"subjects": {}, "questions": []}
 BY_ID: dict[str, dict] = {}
@@ -174,8 +186,55 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):  # quiet
         pass
 
+    def _cors(self) -> None:
+        origin = self.headers.get("Origin", "")
+        if origin in ALLOWED_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Ged-Key")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+
+    def _gate(self) -> bool:
+        """Password gate with a 10/min login budget and a 300/min request budget."""
+        bare = self.path.split("?")[0]
+        ip = self.headers.get("CF-Connecting-IP") or self.client_address[0]
+        now = time.time()
+
+        def prune(dq, window=60.0):
+            while dq and now - dq[0] > window:
+                dq.popleft()
+
+        allq = HITS.setdefault("all:" + ip, collections.deque())
+        prune(allq)
+        if len(allq) >= 300:
+            self._json({"error": "rate limited", "retry_after": int(60 - (now - allq[0]))}, 429)
+            return False
+        allq.append(now)
+
+        if bare == "/api/ping" or not bare.startswith("/api/"):
+            return True
+        if self.headers.get("X-Ged-Key") == PASSWORD:
+            return True
+
+        # failed password attempt — this is what the 10/min budget protects
+        authq = HITS.setdefault("auth:" + ip, collections.deque())
+        prune(authq)
+        if len(authq) >= 10:
+            self._json({"error": "too many login attempts", "retry_after": int(60 - (now - authq[0]))}, 429)
+            return False
+        authq.append(now)
+        self._json({"error": "password required"}, 401)
+        return False
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self.send_response(204)
+        self._cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _send(self, code: int, body: bytes, ctype: str) -> None:
         self.send_response(code)
+        self._cors()
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
@@ -196,6 +255,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         ensure_fresh()
+        if not self._gate():
+            return
         path = self.path.split("?")[0]
         query = self.path.split("?")[1] if "?" in self.path else ""
 
@@ -210,6 +271,27 @@ class Handler(BaseHTTPRequestHandler):
                       if (not subj or q["subject"] == subj)
                       and (not q.get("variant") or (q.get("due") or 0) <= now)]
             self._json({"subjects": BANK["subjects"], "questions": qs})
+            return
+        if path == "/api/ping":
+            self._json({"ok": True})
+            return
+        if path == "/api/sessions":
+            out = {}
+            for f in SESSIONS.glob("*.json"):
+                try:
+                    d = json.loads(f.read_text())
+                except Exception:
+                    continue
+                out[f.stem] = {"updated": d.get("updated"), "progress": d.get("progress")}
+            self._json(out)
+            return
+        if path.startswith("/api/session/"):
+            subj = path.rsplit("/", 1)[-1]
+            f = SESSIONS / f"{subj}.json"
+            if not f.exists():
+                self._json({"error": "no session"}, 404)
+                return
+            self._json(json.loads(f.read_text()))
             return
         if path == "/api/stats":
             with LOCK:
@@ -246,6 +328,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         ensure_fresh()
+        if not self._gate():
+            return
         path = self.path.split("?")[0]
         body = self._body()
 
@@ -283,6 +367,17 @@ class Handler(BaseHTTPRequestHandler):
                  "question_id": qid}, indent=1))
             wake_tutor(rid, ctx, q, body.get("kind", "chat"))
             self._json({"request_id": rid})
+            return
+
+        if path == "/api/session":
+            subj = str(body.get("subject") or "").strip()
+            if not subj.isalnum() and "_" not in subj:
+                self._json({"error": "bad subject"}, 400)
+                return
+            (SESSIONS / f"{subj}.json").write_text(json.dumps(
+                {"subject": subj, "updated": time.time(), "progress": body.get("progress"),
+                 "state": body.get("state")}, indent=1))
+            self._json({"ok": True})
             return
 
         if path == "/api/reload":
