@@ -6,9 +6,16 @@ const state = {
   points: 0, streak: 0, focusId: null, mentionIdx: 0, mentionHits: [],
 };
 
+const API = (location.hostname === "127.0.0.1" || location.hostname === "localhost")
+  ? "" : (window.GED_API || "");
+
+function key() { return localStorage.getItem("gedKey") || ""; }
+
 async function api(path, body) {
-  const opt = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
-  const r = await fetch(path, opt);
+  const headers = { "X-Ged-Key": key() };
+  if (body) headers["Content-Type"] = "application/json";
+  const r = await fetch(API + path, body ? { method: "POST", headers, body: JSON.stringify(body) } : { headers });
+  if (r.status === 401) throw new Error("401");
   return r.json();
 }
 
@@ -95,6 +102,17 @@ function ctx() {
   };
 }
 
+function saveSession() {
+  if (state.offline) return;
+  api("/api/session", {
+    subject: state.subject,
+    progress: { index: state.i + 1, total: state.questions.length, points: state.points,
+                streak: state.streak, score: state.score, asked: state.asked },
+    state: { i: state.i, order: state.questions.map((q) => q.id), answers: state.answers,
+             score: state.score, asked: state.asked, points: state.points, streak: state.streak },
+  }).catch(() => {});
+}
+
 function paintScore() {
   $("#points").textContent = `${state.points} pts`;
   $("#streak").textContent = `streak ${state.streak}`;
@@ -102,6 +120,24 @@ function paintScore() {
 }
 
 /* ---------------------------------------------------------------- home */
+async function unlock() {
+  const box = $("#gate");
+  box.classList.remove("hidden");
+  $("#gateform").onsubmit = async (e) => {
+    e.preventDefault();
+    const v = $("#gatepass").value.trim();
+    localStorage.setItem("gedKey", v);
+    try {
+      await api("/api/stats");
+      box.classList.add("hidden");
+      if (key()) { api('/api/stats').then(() => boot()).catch(() => unlock()); } else { unlock(); }
+    } catch (err) {
+      $("#gateerr").textContent = "Wrong password.";
+      localStorage.removeItem("gedKey");
+    }
+  };
+}
+
 async function boot() {
   try {
     state.bank = await api("/api/questions");
@@ -115,26 +151,74 @@ async function boot() {
   }
   const box = $("#subjects");
   box.innerHTML = "";
-  for (const [key, meta] of Object.entries(state.bank.subjects)) {
-    const n = state.bank.questions.filter((q) => q.subject === key).length;
+  let sessions = {};
+  try { sessions = await api("/api/sessions"); } catch (e) { sessions = {}; }
+
+  const cards = Object.entries(state.bank.subjects).map(([k, m]) => ({
+    key: k, name: m.name, n: state.bank.questions.filter((q) => q.subject === k).length,
+    meta: `${m.time} min on the real test`,
+  }));
+  cards.push({ key: "mega", name: "Mega", n: state.bank.questions.length,
+               meta: "all four subjects, randomized" });
+
+  for (const c of cards) {
+    const saved = sessions[c.key];
     const el = document.createElement("button");
-    el.className = "card-sub";
-    el.innerHTML = `<h3>${meta.name}</h3><span>${n} questions · ${meta.time} min on the real test</span>`;
-    el.onclick = () => start(key);
+    el.className = "card-sub" + (c.key === "mega" ? " mega" : "");
+    el.innerHTML = `<h3>${c.name}</h3><span>${c.n} questions · ${c.meta}</span>`
+      + (saved ? `<span class="resume">resume at ${saved.progress ? saved.progress.index : "?"} · ${saved.progress ? saved.progress.points : 0} pts</span>` : "");
+    el.onclick = () => {
+      if (saved && saved.state) {
+        openResume(c.key, saved);
+      } else {
+        start(c.key);
+      }
+    };
     box.appendChild(el);
   }
 }
 
-function start(subject) {
+function openResume(subject, saved) {
+  const box = $("#modal");
+  box.innerHTML = `<div class="modal-card">
+      <h3>Resume ${subject}?</h3>
+      <p>You have a saved run: question ${saved.progress.index} of ${saved.progress.total},
+         ${saved.progress.points} points, streak ${saved.progress.streak}.</p>
+      <div class="modal-actions">
+        <button class="ghost" id="modal-new">Start over</button>
+        <button class="primary" id="modal-resume">Resume</button>
+      </div>
+    </div>`;
+  box.classList.remove("hidden");
+  $("#modal-new").onclick = () => { box.classList.add("hidden"); start(subject); };
+  $("#modal-resume").onclick = () => { box.classList.add("hidden"); start(subject, saved); };
+}
+
+function start(subject, saved) {
   state.subject = subject;
-  state.questions = randomOrder(state.bank.questions.filter((q) => q.subject === subject));
-  state.i = 0; state.answers = {}; state.score = 0; state.asked = 0;
-  state.points = 0; state.streak = 0; state.focusId = null;
+  const pool = subject === "mega" ? state.bank.questions
+                                  : state.bank.questions.filter((q) => q.subject === subject);
+  if (saved && saved.state && Array.isArray(saved.state.order)) {
+    const byId = new Map(pool.map((q) => [q.id, q]));
+    state.questions = saved.state.order.map((id) => byId.get(id)).filter(Boolean);
+    state.i = saved.state.i || 0;
+    state.answers = saved.state.answers || {};
+    state.score = saved.state.score || 0;
+    state.asked = saved.state.asked || 0;
+    state.points = saved.state.points || 0;
+    state.streak = saved.state.streak || 0;
+  } else {
+    state.questions = randomOrder(pool);
+    state.i = 0; state.answers = {}; state.score = 0; state.asked = 0;
+    state.points = 0; state.streak = 0;
+  }
+  state.focusId = null;
   $("#home").classList.add("hidden");
   $("#summary").classList.add("hidden");
   $("#test").classList.remove("hidden");
   paintScore();
   render();
+  saveSession();
 }
 
 /* ---------------------------------------------------------------- test */
@@ -261,6 +345,7 @@ async function check() {
       }
     }
     paintScore();
+    saveSession();
     const clean = (reply || "").replace(/SCORE\s*[:=]\s*[0-2]\s*/i, "").trim();
     const head = score === null ? "Jarvis' take" : `Score ${score}/2${delta ? `  (${delta})` : ""}`;
     showFeedback(head, clean || "No answer from Jarvis yet.", score === 2, score === null);
@@ -277,6 +362,7 @@ async function check() {
     delta = award(res.correct);
   }
   paintScore();
+  saveSession();
 
   if (item.type === "mcq") {
     document.querySelectorAll(".opt").forEach((o) => {
@@ -414,7 +500,7 @@ $("#btn-hint").onclick = () => askTutor("hint", "Give me a hint for this one.");
 $("#btn-why").onclick = () => askTutor("why", "Why is that the answer?");
 $("#btn-prev").onclick = () => { if (state.i > 0) { state.i--; render(); } };
 function advance() {
-  if (state.i < state.questions.length - 1) { state.i++; render(); }
+  if (state.i < state.questions.length - 1) { state.i++; render(); saveSession(); }
   else finish();
 }
 
@@ -442,6 +528,7 @@ function openSkip(item) {
     state.answers[`skip-${item.id}`] = true;
     box.classList.add("hidden");
     paintScore();
+    saveSession();
     advance();
   };
 }
@@ -502,4 +589,4 @@ document.addEventListener("keydown", (e) => {
 });
 
 window.__ged = state;  // handy for debugging in the console
-boot();
+if (key()) { api('/api/stats').then(() => boot()).catch(() => unlock()); } else { unlock(); }
