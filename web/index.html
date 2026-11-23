@@ -10,6 +10,8 @@
 <header class="top">
   <div class="brand"><span class="dot"></span> GED Practice</div>
   <div class="top-right">
+    <span id="points" class="pill">0 pts</span>
+    <span id="streak" class="pill">streak 0</span>
     <span id="score" class="pill">0 / 0</span>
     <button id="btn-home" class="ghost">Subjects</button>
     <button id="btn-tutor" class="ghost">Jarvis</button>
@@ -18,7 +20,7 @@
 
 <main id="home" class="home">
   <h1>Pick a subject</h1>
-  <p class="sub">Passages, tables and diagrams are part of the question — read them first.</p>
+  <p class="sub">Questions come in random order. Passages, tables and diagrams are part of the question — read them first.</p>
   <div id="subjects" class="cards"></div>
 </main>
 
@@ -52,12 +54,14 @@
       <strong>Jarvis</strong><span class="pill tiny" id="tutor-state">ready</span>
     </div>
     <div id="chatlog" class="chatlog">
-      <div class="msg bot">Ask me anything about this question.</div>
+      <div class="msg bot">Ask me anything. Type @ to point me at a specific question.</div>
     </div>
+    <div id="focus" class="focus hidden"></div>
     <form id="chatform" class="chatform">
-      <input id="chatinput" placeholder="Ask Jarvis…" autocomplete="off">
+      <input id="chatinput" placeholder="Ask Jarvis… (@ for a question)" autocomplete="off">
       <button class="primary" type="submit">Send</button>
     </form>
+    <div id="mention" class="mention hidden"></div>
   </aside>
 </main>
 
@@ -67,6 +71,7 @@
   <button class="primary" onclick="location.reload()">Start again</button>
 </main>
 
+<div id="modal" class="modal hidden"></div>
 <script src="app.js"></script>
 </body>
 </html>
