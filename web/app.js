@@ -36,6 +36,20 @@ function start(subject) {
   render();
 }
 
+
+function ctx() {
+  const meta = state.bank.subjects[state.subject] || {};
+  return {
+    subject: state.subject,
+    subject_name: meta.name || state.subject,
+    index: state.i + 1,
+    total: state.questions.length,
+    score: state.score,
+    asked: state.asked,
+    answered: Object.keys(state.answers).filter((k) => !k.startsWith("done-")).length,
+  };
+}
+
 /* ---------------------------------------------------------------- test */
 function q() { return state.questions[state.i]; }
 
@@ -98,7 +112,7 @@ async function check() {
 
   if (item.type === "open") {
     showFeedback("", "Sent to Jarvis for grading…", null, true);
-    const { request_id } = await api("/api/help", { id: item.id, kind: "grade", answer: given });
+    const { request_id } = await api("/api/help", { id: item.id, kind: "grade", answer: given, context: ctx() });
     const reply = await waitReply(request_id);
     showFeedback("", reply || "Jarvis is not answering. Compare with the model answer in the explanation.", null, true);
     if (!state.answers[`done-${item.id}`]) {
@@ -150,7 +164,7 @@ async function askTutor(kind, text) {
   addMsg("me", text || kind);
   setTutorState("thinking");
   const { request_id } = await api("/api/help", {
-    id: item.id, kind, text: text || "", answer: state.answers[item.id] || "",
+    id: item.id, kind, text: text || "", answer: state.answers[item.id] || "", context: ctx(),
   });
   const reply = await waitReply(request_id);
   setTutorState("ready");
