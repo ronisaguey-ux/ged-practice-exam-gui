@@ -154,6 +154,57 @@ def parse_numbered(block: list[str], answers: dict[int, tuple[str, str]],
     return out
 
 
+
+def parse_rla_extra(block: list[str], answers: dict[int, tuple[str, str]]) -> list[dict]:
+    """Numbered MCQ blocks that share a labelled PASSAGE above them."""
+    out: list[dict] = []
+    passage: list[str] = []
+    qn = None
+    buf: list[str] = []
+    opts: list[list[str]] = [[]]
+
+    def flush():
+        nonlocal qn, buf, opts
+        if qn is None:
+            return
+        letter, expl = answers.get(qn, ("", ""))
+        text = " ".join(buf).strip()
+        stem = re.split(r"\s+[A-D]\)", text)[0].strip()
+        out.append({"id": None, "subject": "rla", "type": "mcq", "set": None,
+                    "passage": " ".join(passage) or None, "image": None,
+                    "prompt": stem,
+                    "options": [f"{o}" for o in opts[0][:4]],
+                    "answer": letter, "accept": [], "explanation": expl})
+        qn, buf, opts = None, [], [[]]
+
+    for raw in block:
+        line = raw.strip()
+        if line.startswith("PASSAGE"):
+            flush()
+            passage = []
+            continue
+        m = NUM.match(line)
+        if m and int(m.group(1)) <= 200:
+            flush()
+            qn = int(m.group(1))
+            buf = [m.group(2).strip()]
+            opts = [[]]
+            continue
+        if qn is None:
+            if line and not set(line) <= {"-"}:
+                passage.append(line)
+            continue
+        mo = OPT.match(raw)
+        if mo:
+            opts[0].append(f"{mo.group(1)}) {mo.group(2).strip()}")
+        elif line and not set(line) <= {"-"}:
+            if opts[0]:
+                opts[0][-1] += " " + line
+            else:
+                buf.append(line)
+    flush()
+    return out
+
 def add_ids(qs: list[dict], prefix: str) -> None:
     for n, q in enumerate(qs, 1):
         q["id"] = f"{prefix}-{n:03d}"
@@ -233,6 +284,16 @@ def main() -> None:
     soc += parse_numbered(rap, parse_answers(rap_key), "social_studies", "open")
     add_ids(soc, "soc")
 
+    # extra sections appended to the study files
+    sci_tail = section(sci_lines, "PART 8 — EXTRA PRACTICE QUESTIONS", ())
+    cut_s = next((i for i, l in enumerate(sci_tail) if l.strip().startswith("ANSWER KEY")), len(sci_tail))
+    science += parse_science_sets(sci_tail[:cut_s], parse_answers(sci_tail[cut_s:]))
+
+    rla_tail = section(rla_lines, "PART 7 — EXTRA PRACTICE QUESTIONS", ())
+    cut = next((i for i, l in enumerate(rla_tail) if l.strip().startswith("ANSWER KEY")), len(rla_tail))
+    rla += parse_rla_extra(rla_tail[:cut], parse_answers(rla_tail[cut:]))
+    add_ids(science, "sci")
+    add_ids(rla, "rla")
     clean, seen = [], set()
     for q in science + math + rla + soc:
         if q["id"] in seen or len(q["prompt"]) < 12:
