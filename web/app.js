@@ -459,13 +459,20 @@ function setTutorState(s) { $("#tutor-state").textContent = s; }
 
 /* ---------------------------------------------------------------- @mentions */
 function openMention(query) {
-  const all = state.bank.questions;
+  // only questions you have already answered are offered
+  const answered = new Set(Object.keys(state.answers)
+    .filter((k) => k.startsWith("done-")).map((k) => k.slice(5)));
+  const all = state.bank.questions.filter((x) => answered.has(x.id));
   const ql = query.toLowerCase();
   state.mentionHits = all
     .filter((x) => !ql || x.prompt.toLowerCase().includes(ql) || x.id.includes(ql))
     .slice(0, 8);
   const box = $("#mention");
-  if (!state.mentionHits.length) { box.classList.add("hidden"); return; }
+  if (!state.mentionHits.length) {
+    box.innerHTML = `<div class="mention-item"><span>${all.length ? "no match" : "answer a question first — @ lists what you have done"}</span></div>`;
+    box.classList.remove("hidden");
+    return;
+  }
   state.mentionIdx = 0;
   box.innerHTML = state.mentionHits
     .map((x, i) => `<div class="mention-item${i === 0 ? " on" : ""}" data-id="${x.id}">
