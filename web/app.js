@@ -414,4 +414,5 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+window.__ged = state;  // handy for debugging in the console
 boot();
