@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# ged-jarvis — keep Jarvis (the GED tutor agent) alive in a tmux session.
+# ged-jarvis — keep Jarvis (the GED tutor) alive in its own tmux session.
 #
 #   ged-jarvis          start if missing, then attach
 #   ged-jarvis --bg     start if missing, do not attach
 #   ged-jarvis --kill   stop the session
+#
+# Jarvis runs isolated: its own config home (~/.config/ged-tutor) and its own
+# private opencode server (--standalone), so the only MCP it can see is `ged`
+# and none of the owner's agent rules are injected.
 set -u
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
@@ -11,7 +15,10 @@ SESSION=jarvis
 CONFIG_HOME="$HOME/.config/ged-tutor"
 APP="/home/roni/Roni_workspace/ged-practice-exam-gui"
 SID_FILE="$HOME/.local/state/opencode/ged_tutor_session"
+DEFAULT_SID="ses_df5a439b5ffeQObZYbRjBuQcm7"
 mkdir -p "$(dirname "$SID_FILE")"
+[ -s "$SID_FILE" ] || printf '%s\n' "$DEFAULT_SID" > "$SID_FILE"
+SID="$(head -1 "$SID_FILE" | tr -d '[:space:]')"
 
 if [ "${1:-}" = "--kill" ]; then
   tmux kill-session -t "$SESSION" 2>/dev/null && echo "jarvis stopped"
@@ -19,18 +26,10 @@ if [ "${1:-}" = "--kill" ]; then
 fi
 
 if ! tmux has-session -t "$SESSION" 2>/dev/null; then
-  before=$(oc2 list --limit 30 2>/dev/null | awk '{print $1}' | sort)
   tmux new-session -d -s "$SESSION" -c "$APP" \
-    "XDG_CONFIG_HOME=$CONFIG_HOME opencode2 $APP; exec bash"
-  for _ in $(seq 1 40); do
-    sleep 1
-    new=$(oc2 list --limit 30 2>/dev/null | awk '{print $1}' | sort | comm -13 <(echo "$before") - | tail -1)
-    if [ -n "${new:-}" ]; then
-      printf '%s\n' "$new" > "$SID_FILE"
-      break
-    fi
-  done
-  echo "jarvis started (session $(cat "$SID_FILE" 2>/dev/null || echo pending))"
+    "XDG_CONFIG_HOME=$CONFIG_HOME opencode2 --standalone -s $SID $APP; exec bash"
+  sleep 3
+  echo "jarvis started ($SID)"
 fi
 
 if [ "${1:-}" != "--bg" ]; then
