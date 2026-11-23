@@ -1,0 +1,92 @@
+[
+ {
+  "title": "Marbury v. Madison (1803, excerpt)",
+  "passage": "It is emphatically the province and duty of the judicial department to say what the law is. Those who apply the rule to particular cases, must of necessity expound and interpret that rule. If two laws conflict with each other, the courts must decide on the operation of each. So if a law be in opposition to the constitution; if both the law and the constitution apply to a particular case, so that the court must either decide that case conformably to the law, disregarding the constitution; or conformably to the constitution, disregarding the law; the court must determine which of these conflicting rules governs the case. This is of the very essence of judicial duty. If then the courts are to regard the constitution, and the constitution is superior to any ordinary act of the legislature, the constitution, and not such ordinary act, must govern the case to which they both apply.",
+  "questions": [
+   {"prompt": "What power does this passage establish?",
+    "options": ["Judicial review of laws", "The president's veto", "Congress's power to tax", "The Senate's treaty power"],
+    "answer": "A",
+    "explanation": "Marshall asserts that courts must treat the Constitution as superior to ordinary statutes — judicial review."},
+   {"prompt": "According to the passage, when a law conflicts with the Constitution, the court must",
+    "options": ["follow the law", "follow the Constitution", "ask Congress to decide", "dismiss the case"],
+    "answer": "B",
+    "explanation": "The Constitution 'must govern the case to which they both apply.'"},
+   {"prompt": "The author's argument depends on the premise that",
+    "options": ["the Constitution is superior to ordinary legislation", "courts are elected", "Congress is the final interpreter", "states may ignore federal law"],
+    "answer": "A",
+    "explanation": "The whole argument rests on constitutional supremacy over ordinary acts of the legislature."}
+  ]
+ },
+ {
+  "title": "The Nineteenth Amendment and Suffrage (1920)",
+  "passage": "The right of citizens of the United States to vote shall not be denied or abridged by the United States or by any State on account of sex. Congress shall have power to enforce this article by appropriate legislation. The amendment culminated a campaign that began at Seneca Falls in 1848, where women declared their right to the elective franchise. Western states led the way: Wyoming granted women the vote in 1869, and by 1918 more than a dozen states had done so. During the First World War, women's participation in war industries and volunteer work weakened arguments that politics was outside their sphere. In 1919 Congress approved the amendment, and in August 1920 Tennessee became the thirty-sixth state to ratify it, completing the three-quarters requirement.",
+  "questions": [
+   {"prompt": "What does the amendment forbid?",
+    "options": ["Poll taxes", "Denying the vote on account of sex", "Literacy tests", "Property requirements"],
+    "answer": "B",
+    "explanation": "It bars denying or abridging the vote 'on account of sex.'"},
+   {"prompt": "Which state's ratification completed the requirement in 1920?",
+    "options": ["Wyoming", "Tennessee", "New York", "Ohio"],
+    "answer": "B",
+    "explanation": "The passage states Tennessee became the thirty-sixth state to ratify in August 1920."},
+   {"prompt": "The passage suggests wartime participation",
+    "options": ["delayed the amendment", "undermined claims that politics was outside women's sphere", "had no effect", "ended the suffrage movement"],
+    "answer": "B",
+    "explanation": "Women's war work weakened the argument used against their voting."}
+  ]
+ },
+ {
+  "title": "The Social Security Act (1935, excerpt)",
+  "passage": "An act to provide for the general welfare by establishing a system of Federal old-age benefits, and by enabling the several States to make more adequate provision for aged persons, blind persons, dependent and crippled children, maternal and child welfare, public health, and the administration of their unemployment compensation laws; to establish a Social Security Board; to raise revenue; and for other purposes. Title I provides grants to states for old-age assistance. Title II establishes federal old-age benefits for covered workers. Title III provides for payments to states for unemployment compensation administration. The Act created a payroll tax shared by employers and employees, and it established the principle that workers earn benefits through contributions rather than receiving relief as a form of charity.",
+  "questions": [
+   {"prompt": "What principle does the Act establish about benefits?",
+    "options": ["Benefits are charity for the poor", "Workers earn benefits through contributions", "Benefits come only from states", "Benefits are optional for employers"],
+    "answer": "B",
+    "explanation": "The passage says the Act established that workers earn benefits through contributions."},
+   {"prompt": "Which title covers unemployment compensation administration?",
+    "options": ["Title I", "Title II", "Title III", "Title IV"],
+    "answer": "C",
+    "explanation": "Title III provides payments to states for unemployment compensation administration."},
+   {"prompt": "How is the program funded according to the passage?",
+    "options": ["A payroll tax shared by employers and employees", "A sales tax", "Only general revenue", "Voluntary donations"],
+    "answer": "A",
+    "explanation": "The Act created a payroll tax shared by employers and employees."}
+  ]
+ },
+ {
+  "title": "The Civil Rights Act (1964, excerpt)",
+  "passage": "All persons shall be entitled to the full and equal enjoyment of the goods, services, facilities, privileges, advantages, and accommodations of any place of public accommodation, as defined in this section, without discrimination or segregation on the ground of race, color, religion, or national origin. Each of the following establishments which serves the public is a place of public accommodation within the meaning of this title if its operations affect commerce, or if discrimination or segregation by it is supported by State action: any inn, hotel, motel, or other establishment which provides lodging to transient guests; any restaurant, cafeteria, lunchroom, lunch counter, soda fountain, or other facility principally engaged in selling food for consumption on the premises; any motion picture house, theater, concert hall, sports arena, stadium or other place of exhibition or entertainment.",
+  "questions": [
+   {"prompt": "Which places does Title II cover?",
+    "options": ["Private homes", "Places of public accommodation affecting commerce", "Churches only", "Schools only"],
+    "answer": "B",
+    "explanation": "It covers public accommodations whose operations affect commerce or are supported by state action."},
+   {"prompt": "On what grounds does the Act forbid discrimination in these places?",
+    "options": ["Race, color, religion or national origin", "Age only", "Income only", "Political party"],
+    "answer": "A",
+    "explanation": "The listed grounds are race, color, religion and national origin."},
+   {"prompt": "The phrase 'affect commerce' matters because it",
+    "options": ["limits coverage to businesses connected to interstate trade", "excludes restaurants", "applies only to hotels", "removes federal authority"],
+    "answer": "A",
+    "explanation": "The commerce connection is the constitutional basis for federal regulation of private businesses."}
+  ]
+ },
+ {
+  "title": "The Marshall Plan (1948, excerpt)",
+  "passage": "The truth of the matter is that Europe's requirements for the next three or four years of foreign food and other essential products — principally from America — are so much greater than her present ability to pay that she must have substantial additional help, or face economic, social, and political deterioration of a very grave character. Aside from the demoralizing effect on the world at large and the possibilities of disturbances arising as a result of the desperation of the people concerned, the consequences to the economy of the United States should be apparent to all. It is logical that the United States should do whatever it is able to do to assist in the return of normal economic health in the world, without which there can be no political stability and no assured peace. Our policy is directed not against any country or doctrine but against hunger, poverty, desperation and chaos.",
+  "questions": [
+   {"prompt": "What does the speaker say Europe needs?",
+    "options": ["Military troops", "Substantial additional economic help", "New borders", "Colonial territories"],
+    "answer": "B",
+    "explanation": "Europe's needs exceed its ability to pay, so it requires substantial additional help."},
+   {"prompt": "The stated goal of the policy is to fight",
+    "options": ["a specific nation", "hunger, poverty, desperation and chaos", "European unification", "American exports"],
+    "answer": "B",
+    "explanation": "The passage explicitly says the policy is against hunger, poverty, desperation and chaos, not a country."},
+   {"prompt": "The speaker links economic health to",
+    "options": ["political stability and peace", "military spending", "tariff increases", "colonial expansion"],
+    "answer": "A",
+    "explanation": "He argues there can be no political stability and no assured peace without economic health."}
+  ]
+ }
+]
