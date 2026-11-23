@@ -305,6 +305,23 @@ async function check() {
   const given = state.answers[item.id] || "";
   if (!given.trim()) return;
 
+  const words = given.trim().split(/\s+/).filter(Boolean).length;
+  if (item.type === "open" && words < 5) {
+    // a handful of words is a fill-in, not an essay — grade it here, no AI
+    const guide = String(item.answer || item.explanation || "").toLowerCase();
+    const hit = guide.includes(given.trim().toLowerCase());
+    let delta = "";
+    if (!state.answers[`done-${item.id}`]) {
+      state.asked++; state.answers[`done-${item.id}`] = true;
+      if (hit) { delta = award(true); state.score++; } else { delta = award(false); }
+    }
+    paintScore(); saveSession();
+    showFeedback(`${hit ? "Close enough" : "Not quite"}${delta ? `  (${delta})` : ""}`,
+      `${item.answer || item.explanation || ""}<br><br><small>Short answers are checked here — write 10-20 words to get Jarvis' grading.</small>`,
+      hit);
+    return;
+  }
+
   if (item.type === "open" && state.offline) {
     const guide = item.answer || item.explanation || "No guide for this one.";
     showFeedback("Answer guide", `${guide}<br><br>Score yourself:`,

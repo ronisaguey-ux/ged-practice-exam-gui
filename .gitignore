@@ -7,3 +7,4 @@ site/
 data/session.json
 data/sessions/
 data/variant_jobs.jsonl
+data/passages/
