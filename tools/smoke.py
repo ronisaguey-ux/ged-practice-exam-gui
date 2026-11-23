@@ -15,17 +15,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BASE = "http://127.0.0.1:8765"
+KEY = __import__("os").environ.get("GED_PASS", "Mongosged999")
 fails: list[str] = []
 
 
 def get(path: str):
-    with urllib.request.urlopen(BASE + path, timeout=10) as r:
+    req = urllib.request.Request(BASE + path, headers={"X-Ged-Key": KEY})
+    with urllib.request.urlopen(req, timeout=10) as r:
         return json.loads(r.read())
 
 
 def post(path: str, body: dict):
     req = urllib.request.Request(BASE + path, data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json"}, method="POST")
+                                 headers={"Content-Type": "application/json",
+                                          "X-Ged-Key": KEY}, method="POST")
     with urllib.request.urlopen(req, timeout=10) as r:
         return json.loads(r.read())
 
