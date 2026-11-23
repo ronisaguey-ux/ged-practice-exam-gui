@@ -66,6 +66,23 @@ TOOLS = [
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
+        "name": "variant_jobs",
+        "description": "Answered questions waiting for a reworded variant. Returns the source question for each.",
+        "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer"}}},
+    },
+    {
+        "name": "add_variant",
+        "description": "Create a reworded variant of a question and schedule it to be re-asked after a random interval.",
+        "inputSchema": {"type": "object", "properties": {
+            "job_id": {"type": "string"},
+            "source_id": {"type": "string"},
+            "prompt": {"type": "string"},
+            "options": {"type": "array", "items": {"type": "string"}},
+            "answer": {"type": "string"},
+            "explanation": {"type": "string"},
+            "delay_minutes": {"type": "integer"}}, "required": ["job_id", "source_id", "prompt"]},
+    },
+    {
         "name": "stats",
         "description": "Question counts by subject and type.",
         "inputSchema": {"type": "object", "properties": {}},
@@ -150,6 +167,59 @@ def call(name: str, args: dict) -> dict:
         if not f.exists():
             return text_result("no session yet")
         return text_result(json.dumps(json.loads(f.read_text()), indent=1, ensure_ascii=False))
+
+    if name == "variant_jobs":
+        limit = int(args.get("limit") or 5)
+        jobs = []
+        f = DATA / "variant_jobs.jsonl"
+        if f.exists():
+            for line in f.read_text().splitlines():
+                try:
+                    j = json.loads(line)
+                except Exception:
+                    continue
+                if j.get("done"):
+                    continue
+                src = next((q for q in read_bank()["questions"] if q["id"] == j["question_id"]), None)
+                jobs.append({**j, "question": src})
+                if len(jobs) >= limit:
+                    break
+        return text_result(json.dumps(jobs, indent=1, ensure_ascii=False))
+
+    if name == "add_variant":
+        import random as _r
+        b = read_bank()
+        src = next((q for q in b["questions"] if q["id"] == args.get("source_id")), None)
+        if not src:
+            return text_result(f"no source question {args.get('source_id')}")
+        delay = args.get("delay_minutes")
+        delay = int(delay) if delay is not None else _r.randint(5, 25)
+        n = sum(1 for q in b["questions"] if q.get("variant")) + 1
+        opts = args.get("options") or src.get("options") or []
+        q = {
+            "id": f"var-{n:03d}", "subject": src["subject"], "type": src["type"],
+            "set": None, "passage": src.get("passage"), "image": src.get("image"),
+            "prompt": args.get("prompt"), "options": opts,
+            "answer": args.get("answer") or src.get("answer"),
+            "accept": [], "explanation": args.get("explanation") or src.get("explanation", ""),
+            "variant": True, "source": src["id"], "due": time.time() + delay * 60,
+        }
+        b["questions"].append(q)
+        write_bank(b)
+        # mark the job done
+        f = DATA / "variant_jobs.jsonl"
+        if f.exists():
+            rows = []
+            for line in f.read_text().splitlines():
+                try:
+                    j = json.loads(line)
+                except Exception:
+                    continue
+                if j.get("job_id") == args.get("job_id"):
+                    j["done"] = True
+                rows.append(json.dumps(j))
+            f.write_text("\n".join(rows) + "\n")
+        return text_result(f"added {q['id']} (due in {delay} min)")
 
     if name == "stats":
         b = read_bank()
