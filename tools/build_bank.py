@@ -182,18 +182,26 @@ def parse_rla_extra(block: list[str], answers: dict[int, tuple[str, str]]) -> li
         letter, expl = answers.get(qn, ("", ""))
         text = " ".join(buf).strip()
         stem = re.split(r"\s+[A-D]\)", text)[0].strip()
-        out.append({"id": None, "subject": "rla", "type": "mcq", "set": None,
+        out.append({"id": None, "subject": "rla", "type": "mcq",
+                    "set": f"PASSAGE {set_name}" if set_name else None,
                     "passage": " ".join(passage) or None, "image": None,
                     "prompt": stem,
                     "options": [f"{o}" for o in opts[0][:4]],
                     "answer": letter, "accept": [], "explanation": expl})
         qn, buf, opts = None, [], [[]]
 
+    set_name = None
     for raw in block:
         line = raw.strip()
         if line.startswith("PASSAGE"):
             flush()
             passage = []
+            set_name = line.split()[1] if len(line.split()) > 1 else "PASSAGE"
+            continue
+        if re.match(r"^[A-Z][A-Z &,\-]{5,}$", line) and not line.startswith("SET "):
+            flush()
+            passage = []
+            set_name = None
             continue
         m = NUM.match(line)
         if m and int(m.group(1)) <= 200:
@@ -328,7 +336,7 @@ def main() -> None:
         normalise_fib(q)
         old = prev.get(q["id"])
         if old:
-            for field in ("option_notes", "variant", "source", "due"):
+            for field in ("option_notes", "variant", "source", "due", "passage", "set"):
                 if old.get(field) and not q.get(field):
                     q[field] = old[field]
             if q["type"] == "fib" and len(old.get("accept") or []) > len(q.get("accept") or []):
