@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# ged — open the GED practice GUI.
+#
+#   ged            start server + Jarvis, open the browser, attach to Jarvis
+#   ged --no-attach  same without attaching the terminal to Jarvis
+#   ged --stop     stop the server and Jarvis
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+APP="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+PORT="${GED_PORT:-8765}"
+LOG="/tmp/opencode/ged-server.log"
+mkdir -p /tmp/opencode
+
+if [ "${1:-}" = "--stop" ]; then
+  pkill -f "ged-practice-exam-gui/server.py" 2>/dev/null && echo "server stopped"
+  "$APP/bin/ged-jarvis" --kill 2>/dev/null
+  exit 0
+fi
+
+# 1. question bank
+if [ ! -f "$APP/data/questions.json" ]; then
+  python3 "$APP/tools/build_bank.py" >/dev/null
+fi
+
+# 2. server
+if ! curl -sf -m 2 "http://127.0.0.1:$PORT/api/stats" >/dev/null 2>&1; then
+  ( cd "$APP" && setsid nohup python3 server.py >>"$LOG" 2>&1 & )
+  for _ in $(seq 1 40); do
+    curl -sf -m 1 "http://127.0.0.1:$PORT/api/stats" >/dev/null 2>&1 && break
+    sleep 0.25
+  done
+fi
+
+# 3. tutor
+"$APP/bin/ged-jarvis" --bg >/dev/null 2>&1
+
+# 4. browser
+xdg-open "http://127.0.0.1:$PORT/" >/dev/null 2>&1 &
+
+# 5. terminal
+if [ "${1:-}" != "--no-attach" ]; then
+  tmux attach -t jarvis 2>/dev/null
+fi
