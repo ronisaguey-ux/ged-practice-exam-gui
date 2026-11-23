@@ -7,6 +7,7 @@ refuses to include a robots.txt (the page is noindex via meta tag).
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -19,9 +20,10 @@ def main() -> None:
         shutil.rmtree(SITE)
     shutil.copytree(ROOT / "web", SITE)
     (SITE / "data").mkdir(exist_ok=True)
-    bank = json.loads((ROOT / "data" / "questions.json").read_text())
-    (SITE / "data" / "bank.json").write_text(
-        json.dumps(bank, separators=(",", ":"), ensure_ascii=False))
+    api = os.environ.get("GED_API", "")
+    index = (SITE / "index.html").read_text()
+    index = index.replace("</head>", f'<script>window.GED_API = "{api}";</script>\n</head>')
+    (SITE / "index.html").write_text(index)
     if (SITE / "robots.txt").exists():
         (SITE / "robots.txt").unlink()
     print("site built:", SITE, "files:", sum(1 for _ in SITE.rglob("*") if _.is_file()))
