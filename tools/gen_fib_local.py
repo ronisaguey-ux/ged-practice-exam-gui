@@ -50,9 +50,25 @@ def variants_for(ans: str, prompt: str) -> list[str] | None:
                 seen.add(f)
                 uniq.append(f)
         out = uniq
+    elif re.search(r"[a-zA-Z]", cleaned) and re.search(r"[-+*/^()]", cleaned):
+        # algebraic answer: spacing and factor-order variants are always equal
+        out = [cleaned, cleaned.replace(" ", "")]
+        spaced = re.sub(r"([-+*/])", r" \1 ", cleaned)
+        spaced = re.sub(r"\s+", " ", spaced).strip()
+        out.append(spaced)
+        m2 = re.match(r"^\((.*?)\)\((.*?)\)$", cleaned.replace(" ", ""))
+        if m2:
+            out.append(f"({m2.group(2)})({m2.group(1)})")
+        if "^" in cleaned:
+            out.append(cleaned.replace("^", "**"))
     else:
         return None
-    return out if len(out) >= 5 else None
+    seen, uniq = set(), []
+    for f in out:
+        if f and f not in seen:
+            seen.add(f)
+            uniq.append(f)
+    return uniq if len(uniq) >= 5 else None
 
 
 def main() -> None:
