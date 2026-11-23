@@ -64,6 +64,12 @@ def main() -> None:
     fib = next(q for q in math if q["type"] == "fib")
     check("fib answer accepted", post("/api/answer", {"id": fib["id"], "answer": fib["answer"]})["correct"] is True)
 
+    check("fib ignores stray spaces", post("/api/answer", {"id": fib["id"], "answer": " " + fib["answer"] + " "})["correct"] is True)
+    notes = [q for q in bank["questions"] if q.get("option_notes")]
+    print(f"     option notes present on {len(notes)} mcq")
+    variants = [q for q in get("/api/questions")["questions"] if q.get("variant")]
+    print(f"     variants due now: {len(variants)}")
+
     check("mcp stats", '"total"' in mcp_call("stats", {}))
     check("mcp get_question", mcq["id"] in mcp_call("get_question", {"id": mcq["id"]}))
     check("mcp pending_requests", isinstance(json.loads(mcp_call("pending_requests", {})), list))
