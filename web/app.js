@@ -232,8 +232,13 @@ function render() {
   paintScore();
   $("#feedback").classList.add("hidden");
 
+  const inSet = item.set ? state.questions.filter((x) => x.set === item.set) : [];
+  const setPos = inSet.findIndex((x) => x.id === item.id);
   $("#setline").classList.toggle("hidden", !item.set);
-  $("#setline").textContent = item.set || "";
+  $("#setline").textContent = item.set
+    ? `${item.set} — question ${setPos + 1} of ${inSet.length}`
+    : "";
+  window.scrollTo({ top: 0, behavior: "instant" });
 
   const hasStim = !!(item.passage || item.image);
   $("#stimulus").classList.toggle("hidden", !hasStim);
@@ -509,8 +514,18 @@ $("#btn-hint").onclick = () => askTutor("hint", "Give me a hint for this one.");
 $("#btn-why").onclick = () => askTutor("why", "Why is that the answer?");
 $("#btn-prev").onclick = () => { if (state.i > 0) { state.i--; render(); } };
 function advance() {
-  if (state.i < state.questions.length - 1) { state.i++; render(); saveSession(); }
-  else finish();
+  if (state.i < state.questions.length - 1) {
+    const before = state.questions[state.i] && state.questions[state.i].id;
+    state.i++;
+    // skip exact duplicates so a stale list can never show the same item twice
+    let guard = 0;
+    while (guard++ < 5 && state.questions[state.i] && state.questions[state.i].id === before) {
+      if (state.i >= state.questions.length - 1) break;
+      state.i++;
+    }
+    render();
+    saveSession();
+  } else finish();
 }
 
 function tryNext() {
