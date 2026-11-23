@@ -1,0 +1,92 @@
+[
+ {
+  "title": "Federalist No. 51 (Madison, 1788)",
+  "passage": "But the great security against a gradual concentration of the several powers in the same department, consists in giving to those who administer each department the necessary constitutional means and personal motives to resist encroachments of the others. The provision for defense must in this, as in all other cases, be made commensurate to the danger of attack. Ambition must be made to counteract ambition. The interest of the man must be connected with the constitutional rights of the place. It may be a reflection on human nature, that such devices should be necessary to control the abuses of government. But what is government itself, but the greatest of all reflections on human nature? If men were angels, no government would be necessary. If angels were to govern men, neither external nor internal controls on government would be necessary. In framing a government which is to be administered by men over men, the great difficulty lies in this: you must first enable the government to control the governed; and in the next place oblige it to control itself. A dependence on the people is, no doubt, the primary control on the government; but experience has taught mankind the necessity of auxiliary precautions.",
+  "questions": [
+   {"prompt": "What does Madison mean by 'ambition must be made to counteract ambition'?",
+    "options": ["Officials should compete for popularity", "Each branch's self-interest should check the others' power", "Political parties should be banned", "Elections should be held more often"],
+    "answer": "B",
+    "explanation": "Institutional rivalry is used deliberately as a check on concentrated power."},
+   {"prompt": "According to the passage, what is the 'primary control on the government'?",
+    "options": ["A dependence on the people", "The Supreme Court", "The military", "State governors"],
+    "answer": "A",
+    "explanation": "Madison calls dependence on the people the primary control, with auxiliary precautions added."},
+   {"prompt": "The line 'If men were angels, no government would be necessary' implies that",
+    "options": ["government exists because people are imperfect", "angels should rule", "government is unnecessary", "human nature is perfect"],
+    "answer": "A",
+    "explanation": "Government and its checks exist precisely because human beings are not angelic."}
+  ]
+ },
+ {
+  "title": "Washington's Farewell Address (1796, excerpt)",
+  "passage": "The unity of government which constitutes you one people is also now dear to you. It is justly so, for it is a main pillar in the edifice of your real independence, the support of your tranquility at home, your peace abroad; of your safety; of your prosperity; of that very liberty which you so highly prize. But as it is easy to foresee that, from different causes and from different quarters, much pains will be taken, many artifices employed to weaken in your minds the conviction of this truth; as this is the point in your political fortress against which the batteries of internal and external enemies will be most constantly and actively (though often covertly and insidiously) directed, it is of infinite moment that you should properly estimate the immense value of your national union to your collective and individual happiness. The name of American, which belongs to you in your national capacity, must always exalt the just pride of patriotism more than any appellation derived from local discriminations. With slight shades of difference, you have the same religion, manners, habits, and political principles.",
+  "questions": [
+   {"prompt": "What does Washington call a 'main pillar' of independence?",
+    "options": ["A standing army", "The unity of government", "Foreign alliances", "Political parties"],
+    "answer": "B",
+    "explanation": "He names the unity of government as the main pillar of real independence."},
+   {"prompt": "Washington warns that efforts to weaken national union will be",
+    "options": ["open and public", "covert and insidious", "legal and orderly", "rare and unimportant"],
+    "answer": "B",
+    "explanation": "He describes them as constantly and actively, though covertly and insidiously, directed."},
+   {"prompt": "The address urges citizens to value",
+    "options": ["local identity above national identity", "national union above sectional differences", "foreign alliances", "rapid westward expansion"],
+    "answer": "B",
+    "explanation": "He asks that the name of American outweigh 'local discriminations.'"}
+  ]
+ },
+ {
+  "title": "Lincoln's Second Inaugural Address (1865)",
+  "passage": "Fondly do we hope, fervently do we pray, that this mighty scourge of war may speedily pass away. Yet, if God wills that it continue until all the wealth piled by the bondsman's two hundred and fifty years of unrequited toil shall be sunk, and until every drop of blood drawn with the lash shall be paid by another drawn with the sword, as was said three thousand years ago, so still it must be said 'the judgments of the Lord are true and righteous altogether.' With malice toward none, with charity for all, with firmness in the right as God gives us to see the right, let us strive on to finish the work we are in, to bind up the nation's wounds, to care for him who shall have borne the battle and for his widow and his orphan, to do all which may achieve and cherish a just and lasting peace among ourselves and with all nations.",
+  "questions": [
+   {"prompt": "The phrase 'with malice toward none, with charity for all' expresses",
+    "options": ["a demand for punishment", "a call for reconciliation", "a plan for colonization", "a rejection of the war's outcome"],
+    "answer": "B",
+    "explanation": "It asks for generosity toward the defeated South rather than revenge."},
+   {"prompt": "What does Lincoln identify as the cause of the war's suffering?",
+    "options": ["Foreign interference", "The bondsman's unrequited toil", "Tariff policy", "State boundaries"],
+    "answer": "B",
+    "explanation": "He ties the war's cost directly to slavery — 'the bondsman's two hundred and fifty years of unrequited toil.'"},
+   {"prompt": "The passage's final sentence is a list of",
+    "options": ["grievances", "duties for the postwar period", "military orders", "campaign promises"],
+    "answer": "B",
+    "explanation": "Binding wounds, caring for veterans and widows, and securing peace are tasks for the nation after the war."}
+  ]
+ },
+ {
+  "title": "Brown v. Board of Education (1954, excerpt)",
+  "passage": "We come then to the question presented: Does segregation of children in public schools solely on the basis of race, even though the physical facilities and other 'tangible' factors may be equal, deprive the children of the minority group of equal educational opportunities? We believe that it does. In approaching this problem, we cannot turn the clock back to 1868 when the Amendment was adopted, or even to 1896 when Plessy v. Ferguson was written. We must consider public education in the light of its full development and its present place in American life throughout the Nation. Only in this way can it be determined if segregation in public schools deprives these plaintiffs of the equal protection of the laws. Today, education is perhaps the most important function of state and local governments. It is the very foundation of good citizenship. In these days, it is doubtful that any child may reasonably be expected to succeed in life if he is denied the opportunity of an education.",
+  "questions": [
+   {"prompt": "What question does the Court answer in this excerpt?",
+    "options": ["Whether schools are adequately funded", "Whether racially segregated schools are inherently unequal", "Whether states must build schools", "Whether teachers may be segregated"],
+    "answer": "B",
+    "explanation": "The question is whether segregation 'solely on the basis of race' deprives minority children of equal educational opportunity."},
+   {"prompt": "Which earlier decision does the Court explicitly decline to be bound by?",
+    "options": ["Marbury v. Madison", "Plessy v. Ferguson", "Dred Scott", "Miranda v. Arizona"],
+    "answer": "B",
+    "explanation": "The Court says it cannot turn the clock back to 1896 when Plessy was written."},
+   {"prompt": "The Court's reasoning about education emphasizes that it is",
+    "options": ["a private benefit", "the foundation of good citizenship and later success", "a local luxury", "optional for children"],
+    "answer": "B",
+    "explanation": "The opinion calls education the foundation of good citizenship and essential to success in life."}
+  ]
+ },
+ {
+  "title": "The Fifth Amendment and Miranda (1966, excerpt)",
+  "passage": "No person shall be held to answer for a capital, or otherwise infamous crime, unless on a presentment or indictment of a Grand Jury, except in cases arising in the land or naval forces, or in the Militia, when in actual service in time of War or public danger; nor shall any person be subject for the same offence to be twice put in jeopardy of life or limb; nor shall be compelled in any criminal case to be a witness against himself, nor be deprived of life, liberty, or property, without due process of law; nor shall private property be taken for public use, without just compensation. In Miranda v. Arizona, the Supreme Court held that statements obtained from a defendant during custodial interrogation could not be used unless the defendant had been informed of the right to remain silent and the right to an attorney, and had knowingly waived those rights.",
+  "questions": [
+   {"prompt": "Which protection is guaranteed by the self-incrimination clause?",
+    "options": ["A defendant cannot be forced to testify against himself", "A defendant must answer all questions", "Trials must be public", "Property cannot be taken"],
+    "answer": "A",
+    "explanation": "The clause bars compelling a person to be a witness against himself."},
+   {"prompt": "What does 'double jeopardy' prohibit?",
+    "options": ["Being tried twice for the same offense", "Two lawyers for one defendant", "Two witnesses at trial", "Appeals by the prosecution"],
+    "answer": "A",
+    "explanation": "It protects a person from being put in jeopardy twice for the same offence."},
+   {"prompt": "Miranda added a requirement that police",
+    "options": ["obtain a warrant for all questioning", "inform suspects of rights before custodial interrogation", "record all trials", "provide a jury at arrest"],
+    "answer": "B",
+    "explanation": "Miranda requires notification of the right to remain silent and to counsel, with a knowing waiver."}
+  ]
+ }
+]

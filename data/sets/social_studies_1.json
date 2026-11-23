@@ -1,0 +1,92 @@
+[
+ {
+  "title": "The Declaration of Independence (1776)",
+  "passage": "When in the Course of human events, it becomes necessary for one people to dissolve the political bands which have connected them with another, and to assume among the powers of the earth, the separate and equal station to which the Laws of Nature and of Nature's God entitle them, a decent respect to the opinions of mankind requires that they should declare the causes which impel them to the separation. We hold these truths to be self-evident, that all men are created equal, that they are endowed by their Creator with certain unalienable Rights, that among these are Life, Liberty and the pursuit of Happiness. That to secure these rights, Governments are instituted among Men, deriving their just powers from the consent of the governed. That whenever any Form of Government becomes destructive of these ends, it is the Right of the People to alter or to abolish it, and to institute new Government, laying its foundation on such principles and organizing its powers in such form, as to them shall seem most likely to effect their Safety and Happiness. Prudence, indeed, will dictate that Governments long established should not be changed for light and transient causes.",
+  "questions": [
+   {"prompt": "According to the passage, where do governments get their just powers?",
+    "options": ["From a written constitution", "From the consent of the governed", "From military strength", "From the laws of other nations"],
+    "answer": "B",
+    "explanation": "The text says governments derive just powers 'from the consent of the governed.'"},
+   {"prompt": "The author argues that people may abolish a government when it",
+    "options": ["raises taxes without a vote", "becomes destructive of the rights it should secure", "changes its capital", "loses a war"],
+    "answer": "B",
+    "explanation": "The right to alter or abolish applies when a government becomes destructive of the ends it exists to serve."},
+   {"prompt": "The passage's warning about 'light and transient causes' suggests the author believes",
+    "options": ["revolution should be frequent", "governments should never change", "change should require serious, lasting grievances", "monarchy is preferable"],
+    "answer": "C",
+    "explanation": "'Light and transient' means trivial and temporary, so serious grievances are required."}
+  ]
+ },
+ {
+  "title": "The Gettysburg Address (1863)",
+  "passage": "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle-field of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live. It is altogether fitting and proper that we should do this. But, in a larger sense, we can not dedicate — we can not consecrate — we can not hallow — this ground. The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract. The world will little note, nor long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced.",
+  "questions": [
+   {"prompt": "What does Lincoln say the soldiers have already done to the battlefield?",
+    "options": ["Purchased it for the government", "Consecrated it beyond the power of the speakers", "Surveyed and mapped it", "Abandoned it"],
+    "answer": "B",
+    "explanation": "He says the brave men 'have consecrated it, far above our poor power to add or detract.'"},
+   {"prompt": "The phrase 'unfinished work' most nearly refers to",
+    "options": ["rebuilding the railroad", "preserving the nation and its founding principle", "writing a new constitution", "electing a new president"],
+    "answer": "B",
+    "explanation": "The unfinished work is the cause the soldiers died for — the survival of the nation and equality."},
+   {"prompt": "Lincoln's tone in this passage is best described as",
+    "options": ["bitter and accusing", "solemn and resolute", "playful", "indifferent"],
+    "answer": "B",
+    "explanation": "The address is grave and committed rather than angry or casual."}
+  ]
+ },
+ {
+  "title": "Declaration of Sentiments, Seneca Falls (1848)",
+  "passage": "When, in the course of human events, it becomes necessary for one portion of the family of man to assume among the people of the earth a position different from that which they have hitherto occupied, but one to which the laws of nature and of nature's God entitle them, a decent respect to the opinions of mankind requires that they should declare the causes that impel them to such a course. We hold these truths to be self-evident: that all men and women are created equal; that they are endowed by their Creator with certain inalienable rights; that among these are life, liberty, and the pursuit of happiness; that to secure these rights governments are instituted, deriving their just powers from the consent of the governed. The history of mankind is a history of repeated injuries and usurpations on the part of man toward woman, having in direct object the establishment of an absolute tyranny over her. He has never permitted her to exercise her inalienable right to the elective franchise. He has compelled her to submit to laws, in the formation of which she had no voice.",
+  "questions": [
+   {"prompt": "The document's opening deliberately echoes which earlier text?",
+    "options": ["The Bill of Rights", "The Declaration of Independence", "The Constitution", "The Federalist Papers"],
+    "answer": "B",
+    "explanation": "It borrows the structure and wording of the Declaration of Independence."},
+   {"prompt": "Which grievance is stated directly in the passage?",
+    "options": ["Women cannot vote", "Women cannot own property in any state", "Women are barred from churches", "Women pay higher taxes"],
+    "answer": "A",
+    "explanation": "It says man 'has never permitted her to exercise her inalienable right to the elective franchise' — the vote."},
+   {"prompt": "The authors' use of 'tyranny' is meant to",
+    "options": ["describe foreign rule", "equate women's legal position with oppression under a tyrant", "criticize the church only", "praise existing law"],
+    "answer": "B",
+    "explanation": "Framing legal inequality as tyranny borrows revolutionary language to demand change."}
+  ]
+ },
+ {
+  "title": "Federalist No. 10 (Madison, 1787)",
+  "passage": "Among the numerous advantages promised by a well-constructed Union, none deserves to be more accurately developed than its tendency to break and control the violence of faction. The friend of popular governments never finds himself so much alarmed for their character and fate, as when he contemplates their propensity to this dangerous vice. By a faction, I understand a number of citizens, whether amounting to a majority or a minority of the whole, who are united and actuated by some common impulse of passion, or of interest, adverse to the rights of other citizens, or to the permanent and aggregate interests of the community. There are two methods of curing the mischiefs of faction: the one, by removing its causes; the other, by controlling its effects. The latent causes of faction are thus sown in the nature of man; and we see them everywhere brought into different degrees of activity, according to the different circumstances of civil society. A zeal for different opinions concerning religion, concerning government, and many other points, has, in turn, divided mankind into parties.",
+  "questions": [
+   {"prompt": "How does Madison define a faction?",
+    "options": ["Any political party", "A group united by a passion or interest adverse to others' rights or the public good", "A minority of voters", "A foreign influence"],
+    "answer": "B",
+    "explanation": "The definition requires a shared impulse that harms others' rights or the community's interests."},
+   {"prompt": "Madison argues the causes of faction",
+    "options": ["can be eliminated by good laws", "are rooted in human nature", "come only from economic inequality", "are created by the courts"],
+    "answer": "B",
+    "explanation": "He says the latent causes 'are sown in the nature of man.'"},
+   {"prompt": "Which remedy does the passage imply is more practical?",
+    "options": ["Removing the causes of faction", "Controlling the effects of faction", "Banning religion", "Abolishing elections"],
+    "answer": "B",
+    "explanation": "Since causes lie in human nature, the practical route is controlling effects through a large republic."}
+  ]
+ },
+ {
+  "title": "The Emancipation Proclamation (1863, excerpt)",
+  "passage": "That on the first day of January, in the year of our Lord one thousand eight hundred and sixty-three, all persons held as slaves within any State or designated part of a State, the people whereof shall then be in rebellion against the United States, shall be then, thenceforward, and forever free; and the Executive Government of the United States, including the military and naval authority thereof, will recognize and maintain the freedom of such persons, and will do no act or acts to repress such persons, or any of them, in any efforts they may make for their actual freedom. That the Executive will, on the first day of January aforesaid, by proclamation, designate the States and parts of States, if any, in which the people thereof, respectively, shall then be in rebellion against the United States; and the fact that any State, or the people thereof, shall on that day be, in good faith, represented in the Congress of the United States by members chosen thereto at elections wherein a majority of the qualified voters of such State shall have participated, shall, in the absence of strong countervailing testimony, be deemed conclusive evidence that such State, and the people thereof, are not then in rebellion against the United States.",
+  "questions": [
+   {"prompt": "Which enslaved people did the proclamation declare free?",
+    "options": ["All enslaved people in the United States", "Those in states still in rebellion", "Only those in border states", "Only those who served in the army"],
+    "answer": "B",
+    "explanation": "It applied to states or parts of states 'in rebellion,' not to loyal slave states."},
+   {"prompt": "The passage is best described as",
+    "options": ["a speech urging Congress to act", "an executive order with legal language", "a Supreme Court opinion", "a treaty"],
+    "answer": "B",
+    "explanation": "It is a presidential proclamation using formal legal phrasing."},
+   {"prompt": "What did the proclamation promise the executive branch would do?",
+    "options": ["Compensate slaveholders", "Recognize and maintain the freedom of the people it freed", "Deport freedpeople", "Return them to their owners"],
+    "answer": "B",
+    "explanation": "The text commits the government, including the military, to recognize and maintain their freedom."}
+  ]
+ }
+]
