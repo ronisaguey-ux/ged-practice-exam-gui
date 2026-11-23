@@ -1,0 +1,92 @@
+[
+ {
+  "title": "Narrative of the Life of Frederick Douglass (1845)",
+  "passage": "I was born in Tuckahoe, near Hillsborough, and about twelve miles from Easton, in Talbot county, Maryland. I have no accurate knowledge of my age, never having seen any authentic record containing it. By far the larger part of the slaves know as little of their ages as horses know of theirs, and it is the wish of most masters within my knowledge to keep their slaves thus ignorant. I do not remember to have ever met a slave who could tell of his birthday. They seldom come nearer to it than planting-time, harvest-time, cherry-time, spring-time, or fall-time. A want of information concerning my own was a source of unhappiness to me even during childhood. The white children could tell their ages. I could not tell why I ought to be deprived of the same privilege. I was not allowed to make any inquiries of my master concerning it. He deemed all such inquiries on the part of a slave improper and impertinent, and evidence of a restless spirit.",
+  "questions": [
+   {"prompt": "What does Douglass say he lacks?",
+    "options": ["Knowledge of his exact age", "Any memory of childhood", "Knowledge of his mother's name", "A place of birth"],
+    "answer": "A",
+    "explanation": "He says he has no accurate knowledge of his age and never saw a record of it."},
+   {"prompt": "Why does Douglass call this ignorance a source of unhappiness?",
+    "options": ["He wanted to celebrate birthdays", "He saw white children knew their ages and he was denied the same", "He could not work", "He feared punishment"],
+    "answer": "B",
+    "explanation": "He compares himself with white children who could tell their ages."},
+   {"prompt": "The passage's purpose is mainly to",
+    "options": ["entertain with a childhood story", "expose how slavery enforced ignorance", "explain Maryland geography", "describe a birthday party"],
+    "answer": "B",
+    "explanation": "The anecdote about his unknown birthday illustrates a system that kept enslaved people ignorant on purpose."}
+  ]
+ },
+ {
+  "title": "Frankenstein — Mary Shelley (1818)",
+  "passage": "You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings. I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking. I am already far north of London, and as I walk in the streets of Petersburgh, I feel a cold northern breeze play upon my cheeks, which braces my nerves and fills me with delight. Do you understand this feeling? This breeze, which has travelled from the regions towards which I am advancing, gives me a foretaste of those icy climes. Inspirited by this wind of promise, my daydreams become more fervent and vivid. I try in vain to be persuaded that the pole is the seat of frost and desolation; it ever presents itself to my imagination as the region of beauty and delight.",
+  "questions": [
+   {"prompt": "To whom is the narrator writing?",
+    "options": ["His sister", "His captain", "A scientist", "A stranger"],
+    "answer": "A",
+    "explanation": "He addresses 'my dear sister' and mentions her forebodings."},
+   {"prompt": "How does the narrator feel about his journey?",
+    "options": ["Fearful and doubtful", "Confident and exhilarated", "Bored", "Angry"],
+    "answer": "B",
+    "explanation": "He speaks of delight, increasing confidence, and fervent daydreams."},
+   {"prompt": "The passage contrasts the reality of the pole with",
+    "options": ["his imagination of beauty and delight", "his sister's warnings", "the map's accuracy", "the crew's opinion"],
+    "answer": "A",
+    "explanation": "He refuses to accept the pole as 'frost and desolation,' imagining beauty instead."}
+  ]
+ },
+ {
+  "title": "Moby-Dick — Herman Melville (1851)",
+  "passage": "Call me Ishmael. Some years ago — never mind how long precisely — having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation. Whenever I find myself growing grim about the mouth; whenever it is a damp, drizzly November in my soul; whenever I find myself involuntarily pausing before coffin warehouses, and bringing up the rear of every funeral I meet; and especially whenever my hypos get such an upper hand of me, that it requires a strong moral principle to prevent me from deliberately stepping into the street, and methodically knocking people's hats off — then, I account it high time to get to sea as soon as I can. This is my substitute for pistol and ball.",
+  "questions": [
+   {"prompt": "Why does the narrator go to sea?",
+    "options": ["To make a fortune", "To escape low spirits and restlessness", "To find his family", "To study whales"],
+    "answer": "B",
+    "explanation": "He goes to sea whenever he grows grim, as a way to drive off the spleen."},
+   {"prompt": "The phrase 'a damp, drizzly November in my soul' is an example of",
+    "options": ["metaphor", "simile", "onomatopoeia", "alliteration only"],
+    "answer": "A",
+    "explanation": "It describes a mood through a season without using like or as — a metaphor."},
+   {"prompt": "The narrator's tone is best described as",
+    "options": ["cheerful and simple", "wry and self-aware", "formal and distant", "angry"],
+    "answer": "B",
+    "explanation": "The humor about knocking off hats and 'pistol and ball' shows wry self-awareness."}
+  ]
+ },
+ {
+  "title": "Walden — Henry David Thoreau (1854)",
+  "passage": "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived. I did not wish to live what was not life, living is so dear; nor did I wish to practise resignation, unless it was quite necessary. I wanted to live deep and suck out all the marrow of life, to live so sturdily and Spartan-like as to put to rout all that was not life, to cut a broad swath and shave close, to drive life into a corner, and reduce it to its lowest terms, and, if it proved to be mean, why then to get the whole and genuine meanness of it, and publish its meanness to the world; or if it were sublime, to know it by experience, and be able to give a true account of it in my next excursion.",
+  "questions": [
+   {"prompt": "Why did Thoreau go to the woods?",
+    "options": ["To escape taxes", "To live deliberately and test what life teaches", "To hunt", "To build a house for profit"],
+    "answer": "B",
+    "explanation": "He states he wished to live deliberately and front only the essential facts of life."},
+   {"prompt": "What does 'suck out all the marrow of life' mean?",
+    "options": ["To eat simply", "To extract the fullest experience of life", "To avoid people", "To write a book"],
+    "answer": "B",
+    "explanation": "The image means taking the deepest, most essential part of experience."},
+   {"prompt": "The passage's central value is",
+    "options": ["comfort and wealth", "intentional, examined living", "fame", "obedience to custom"],
+    "answer": "B",
+    "explanation": "He rejects living 'what was not life' in favor of a deliberate, examined life."}
+  ]
+ },
+ {
+  "title": "Sojourner Truth, Akron, Ohio (1851)",
+  "passage": "Well, children, where there is so much racket there must be something out of kilter. I think that 'twixt the negroes of the South and the women at the North, all talking about rights, the white men will be in a fix pretty soon. But what's all this here talking about? That man over there says that women need to be helped into carriages, and lifted over ditches, and to have the best place everywhere. Nobody ever helps me into carriages, or over mud-puddles, or gives me any best place! And ain't I a woman? Look at me! Look at my arm! I have ploughed and planted, and gathered into barns, and no man could head me! And ain't I a woman? I could work as much and eat as much as a man — when I could get it — and bear the lash as well! And ain't I a woman? I have borne thirteen children, and seen most all sold off to slavery, and when I cried out with my mother's grief, none but Jesus heard me! And ain't I a woman?",
+  "questions": [
+   {"prompt": "What claim is the speaker answering?",
+    "options": ["That women are too weak to vote", "That women need to be helped and protected", "That slavery should expand", "That men cannot work"],
+    "answer": "B",
+    "explanation": "She quotes the man who says women must be helped into carriages and given the best place."},
+   {"prompt": "How does she support her argument?",
+    "options": ["With statistics", "With her own labor and suffering", "With a legal citation", "With a story about a king"],
+    "answer": "B",
+    "explanation": "She cites ploughing, planting, bearing the lash, and losing her children."},
+   {"prompt": "The repeated question 'ain't I a woman?' functions as",
+    "options": ["a rhetorical refrain pressing her equality", "a request for information", "an apology", "a change of subject"],
+    "answer": "A",
+    "explanation": "The repetition drives home that she shares the humanity being denied to her."}
+  ]
+ }
+]

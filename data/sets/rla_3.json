@@ -1,0 +1,92 @@
+[
+ {
+  "title": "Franklin D. Roosevelt, First Inaugural (1933)",
+  "passage": "This is preeminently the time to speak the truth, the whole truth, frankly and boldly. Nor need we shrink from honestly facing conditions in our country today. This great Nation will endure as it has endured, will revive and will prosper. So, first of all, let me assert my firm belief that the only thing we have to fear is fear itself — nameless, unreasoning, unjustified terror which paralyzes needed efforts to convert retreat into advance. In every dark hour of our national life a leadership of frankness and vigor has met with that understanding and support of the people themselves which is essential to victory. I am convinced that you will again give that support to leadership in these critical days. In such a spirit on my part and on yours we face our common difficulties. They concern, thank God, only material things. Values have shrunken to fantastic levels; taxes have risen; our ability to pay has fallen; government of all kinds is faced by serious curtailment of income.",
+  "questions": [
+   {"prompt": "What does Roosevelt say is the only thing to fear?",
+    "options": ["Foreign invasion", "Fear itself", "Bank failure", "Drought"],
+    "answer": "B",
+    "explanation": "He names 'nameless, unreasoning, unjustified terror' — fear itself."},
+   {"prompt": "According to the passage, what do the country's difficulties concern?",
+    "options": ["Only material things", "Only spiritual matters", "Foreign policy", "The military"],
+    "answer": "A",
+    "explanation": "He says they concern, thank God, only material things."},
+   {"prompt": "Roosevelt's tone is best described as",
+    "options": ["defensive and frightened", "candid and reassuring", "playful", "bitter"],
+    "answer": "B",
+    "explanation": "He speaks frankly about conditions while asserting the nation will endure and revive."}
+  ]
+ },
+ {
+  "title": "John F. Kennedy, Inaugural Address (1961)",
+  "passage": "Let the word go forth from this time and place, to friend and foe alike, that the torch has been passed to a new generation of Americans — born in this century, tempered by war, disciplined by a hard and bitter peace, proud of our ancient heritage — and unwilling to witness or permit the slow undoing of those human rights to which this nation has always been committed, and to which we are committed today at home and around the world. Let every nation know, whether it wishes us well or ill, that we shall pay any price, bear any burden, meet any hardship, support any friend, oppose any foe to assure the survival and the success of liberty. This much we pledge — and more. To those old allies whose cultural and spiritual origins we share, we pledge the loyalty of faithful friends. United, there is little we cannot do in a host of cooperative ventures. Divided, there is little we can do — for we dare not meet a powerful challenge at odds and split asunder.",
+  "questions": [
+   {"prompt": "What does Kennedy pledge to do to assure the survival of liberty?",
+    "options": ["Pay any price and bear any burden", "Reduce the military", "Withdraw from alliances", "Limit trade"],
+    "answer": "A",
+    "explanation": "He promises to pay any price, bear any burden, meet any hardship, support any friend, oppose any foe."},
+   {"prompt": "What does he say is the consequence of division among allies?",
+    "options": ["Greater strength", "Little can be done", "Immediate war", "Nothing changes"],
+    "answer": "B",
+    "explanation": "Divided, 'there is little we can do' against a powerful challenge."},
+   {"prompt": "The phrase 'the torch has been passed' suggests",
+    "options": ["a literal ceremony", "a transfer of responsibility to a new generation", "an end to government", "a warning to enemies"],
+    "answer": "B",
+    "explanation": "The torch image marks responsibility passing to a new generation of Americans."}
+  ]
+ },
+ {
+  "title": "Abraham Lincoln, First Inaugural (1861)",
+  "passage": "I hold that in contemplation of universal law and of the Constitution the Union of these States is perpetual. Perpetuity is implied, if not expressed, in the fundamental law of all national governments. It is safe to assert that no government proper ever had a provision in its organic law for its own termination. Continue to execute all the express provisions of our National Constitution, and the Union will endure forever, it being impossible to destroy it except by some action not provided for in the instrument itself. Again: If the United States be not a government proper, but an association of States in the nature of contract merely, can it, as a contract, be peaceably unmade by less than all the parties who made it? One party to a contract may violate it — break it, so to speak; but does it not require all to lawfully rescind it? Descending from these general principles, we find the proposition that in legal contemplation the Union is perpetual confirmed by the history of the Union itself.",
+  "questions": [
+   {"prompt": "What is Lincoln's central claim in this passage?",
+    "options": ["The Union is perpetual", "States may secede freely", "The Constitution is a treaty", "The Union is a temporary alliance"],
+    "answer": "A",
+    "explanation": "He holds that the Union is perpetual under the Constitution and universal law."},
+   {"prompt": "Lincoln compares the Union to a contract to argue that",
+    "options": ["it can be ended by one party", "it requires all parties to lawfully rescind it", "contracts are invalid", "states are sovereign"],
+    "answer": "B",
+    "explanation": "He asks whether a contract can be unmade by less than all parties who made it."},
+   {"prompt": "The reasoning style of the passage is",
+    "options": ["emotional appeal", "legal argument from principle", "narrative storytelling", "poetic imagery"],
+    "answer": "B",
+    "explanation": "It builds a legal argument from the nature of government and contracts."}
+  ]
+ },
+ {
+  "title": "Susan B. Anthony, On Women's Right to Vote (1873)",
+  "passage": "Friends and fellow citizens: I stand before you tonight under indictment for the alleged crime of having voted at the last presidential election, without having a lawful right to vote. It shall be my work this evening to prove to you that in thus voting, I not only committed no crime, but, instead, simply exercised my citizen's rights, guaranteed to me and all United States citizens by the National Constitution, beyond the power of any State to deny. The preamble of the Federal Constitution says: 'We, the people of the United States, in order to form a more perfect union, establish justice, insure domestic tranquility, provide for the common defense, promote the general welfare, and secure the blessings of liberty to ourselves and our posterity, do ordain and establish this Constitution for the United States of America.' It was we, the people; not we, the white male citizens; nor yet we, the male citizens; but we, the whole people, who formed the Union.",
+  "questions": [
+   {"prompt": "Why was Anthony indicted?",
+    "options": ["For voting without a lawful right", "For speaking in public", "For refusing to pay taxes", "For organizing a march"],
+    "answer": "A",
+    "explanation": "She says she is under indictment for voting without a lawful right."},
+   {"prompt": "What is her main argument?",
+    "options": ["States should decide voting rules", "The Constitution guarantees her the vote as a citizen", "Women should not vote", "Only property owners should vote"],
+    "answer": "B",
+    "explanation": "She argues she exercised a citizen's right guaranteed by the National Constitution."},
+   {"prompt": "How does she use the Preamble?",
+    "options": ["To show 'we the people' includes all citizens, not only white men", "To prove states' rights", "To criticize the courts", "To praise Congress"],
+    "answer": "A",
+    "explanation": "She emphasizes 'we, the whole people' formed the Union."}
+  ]
+ },
+ {
+  "title": "Workplace memo: a shift in policy",
+  "passage": "TO: All warehouse staff. FROM: Operations. SUBJECT: New safety protocol, effective Monday. Beginning Monday, all staff must wear high-visibility vests while on the floor and must complete the fifteen-minute aisle-marking walkthrough before their first shift. The change follows a review of last quarter's incident reports, which showed that two of the three near-misses involved pedestrians in unmarked aisles during forklift movement. Vests and walkthrough schedules are available at the shift desk. Supervisors will log compliance for the first two weeks; after that, the protocol becomes part of the standard safety audit. Staff with a medical exemption should contact Human Resources before Friday. We recognize that this adds a step to the start of each shift. The review found that the added step reduces the chance of the most serious type of injury on our floor, and we would rather spend fifteen minutes than lose a colleague.",
+  "questions": [
+   {"prompt": "What change does the memo announce?",
+    "options": ["New vests and a walkthrough before shifts", "A pay increase", "New forklift purchases", "Longer shifts"],
+    "answer": "A",
+    "explanation": "It requires high-visibility vests and a fifteen-minute walkthrough before the first shift."},
+   {"prompt": "What evidence justifies the change?",
+    "options": ["A review of incident reports and near-misses", "Employee complaints", "A government order", "Customer feedback"],
+    "answer": "A",
+    "explanation": "Two of three near-misses involved pedestrians in unmarked aisles during forklift movement."},
+   {"prompt": "What should a staff member with a medical exemption do?",
+    "options": ["Ignore the protocol", "Contact Human Resources before Friday", "Ask a supervisor for a vest", "Skip the walkthrough"],
+    "answer": "B",
+    "explanation": "The memo directs them to contact Human Resources before Friday."}
+  ]
+ }
+]
