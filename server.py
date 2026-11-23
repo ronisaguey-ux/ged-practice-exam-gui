@@ -7,8 +7,10 @@ answers and hints go to the persistent HY4 tutor through a file queue
 """
 from __future__ import annotations
 
+import difflib
 import json
 import os
+import random
 import re
 import subprocess
 import threading
@@ -27,18 +29,64 @@ PORT = int(os.environ.get("GED_PORT", "8765"))
 
 REQ.mkdir(parents=True, exist_ok=True)
 REP.mkdir(parents=True, exist_ok=True)
+VJOBS = DATA / "variant_jobs.jsonl"
 
 BANK: dict = {"subjects": {}, "questions": []}
 BY_ID: dict[str, dict] = {}
 LOCK = threading.Lock()
+BANK_MTIME = 0.0
 
 
 def load_bank() -> None:
-    global BANK, BY_ID
+    global BANK, BY_ID, BANK_MTIME
     raw = json.loads((DATA / "questions.json").read_text())
     with LOCK:
         BANK = raw
         BY_ID = {q["id"]: q for q in raw["questions"]}
+        BANK_MTIME = (DATA / "questions.json").stat().st_mtime
+
+
+def ensure_fresh() -> None:
+    """The tutor edits the bank while the app runs, so reload when it changes."""
+    try:
+        if (DATA / "questions.json").stat().st_mtime != BANK_MTIME:
+            load_bank()
+    except Exception:
+        pass
+
+
+def queue_variant(q: dict, correct: bool) -> None:
+    job = {"job_id": uuid.uuid4().hex[:10], "question_id": q["id"], "subject": q["subject"],
+           "correct": bool(correct), "ts": time.time(), "done": False}
+    with VJOBS.open("a") as f:
+        f.write(json.dumps(job) + "\n")
+
+
+def pending_variant_jobs() -> int:
+    if not VJOBS.exists():
+        return 0
+    n = 0
+    for line in VJOBS.read_text().splitlines():
+        try:
+            if not json.loads(line).get("done"):
+                n += 1
+        except Exception:
+            continue
+    return n
+
+
+def _lev(a: str, b: str) -> int:
+    if a == b:
+        return 0
+    if not a or not b:
+        return len(a) or len(b)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
 
 
 def norm(s: str) -> str:
@@ -55,6 +103,15 @@ def grade(q: dict, given: str) -> tuple[bool | None, str]:
         g = norm(given)
         if g in variants:
             return True, q["answer"]
+        # typo tolerance: near-miss spellings still count
+        for v in variants:
+            if not v:
+                continue
+            if len(v) <= 6:
+                if _lev(g, v) <= 1:
+                    return True, q["answer"]
+            elif difflib.SequenceMatcher(None, g, v).ratio() >= 0.86:
+                return True, q["answer"]
         # numeric tolerance
         try:
             if abs(float(g.replace(",", "")) - float(re.sub(r"[^0-9.\-]", "", want))) < 1e-6:
@@ -67,6 +124,18 @@ def grade(q: dict, given: str) -> tuple[bool | None, str]:
 
 def wake_tutor(request_id: str, ctx: dict | None = None, q: dict | None = None, kind: str = "chat") -> None:
     ctx = ctx or {}
+    if kind == "variant":
+        n = pending_variant_jobs()
+        msg = (f"ged: {n} variant job(s) queued — call ged_variant_jobs, then ged_add_variant "
+               f"for each (reword it, keep the same answer correct, pick options), then stop. No reply needed.")
+        try:
+            if subprocess.run(["tmux", "has-session", "-t", "jarvis"],
+                              capture_output=True).returncode == 0:
+                subprocess.run(["tmux", "send-keys", "-t", "jarvis", msg, "Enter"], capture_output=True)
+                return
+        except Exception:
+            pass
+        return
     parts = [f"ged: new request {request_id}"]
     if ctx:
         subj = ctx.get("subject_name") or ctx.get("subject") or "?"
@@ -131,6 +200,7 @@ class Handler(BaseHTTPRequestHandler):
             return {}
 
     def do_GET(self) -> None:  # noqa: N802
+        ensure_fresh()
         path = self.path.split("?")[0]
         query = self.path.split("?")[1] if "?" in self.path else ""
 
@@ -139,9 +209,12 @@ class Handler(BaseHTTPRequestHandler):
             for part in query.split("&"):
                 if part.startswith("subject="):
                     subj = part.split("=", 1)[1]
+            now = time.time()
             with LOCK:
-                qs = [q for q in BANK["questions"] if not subj or q["subject"] == subj]
-                self._json({"subjects": BANK["subjects"], "questions": qs})
+                qs = [q for q in BANK["questions"]
+                      if (not subj or q["subject"] == subj)
+                      and (not q.get("variant") or (q.get("due") or 0) <= now)]
+            self._json({"subjects": BANK["subjects"], "questions": qs})
             return
         if path == "/api/stats":
             with LOCK:
@@ -177,6 +250,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send(200, target.read_bytes(), ctype)
 
     def do_POST(self) -> None:  # noqa: N802
+        ensure_fresh()
         path = self.path.split("?")[0]
         body = self._body()
 
@@ -186,6 +260,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"error": "unknown question"}, 404)
                 return
             correct, expected = grade(q, body.get("answer", ""))
+            if correct is not None:
+                queue_variant(q, correct)
             self._json({"correct": correct, "expected": expected,
                         "explanation": q.get("explanation") or "", "type": q["type"]})
             return
@@ -195,11 +271,15 @@ class Handler(BaseHTTPRequestHandler):
             qid = body.get("id") or ""
             q = BY_ID.get(qid) or {}
             ctx = body.get("context") or {}
+            focus = BY_ID.get(body.get("focus_id") or "") or {}
             payload = {
                 "id": rid, "kind": body.get("kind", "chat"), "question_id": qid,
                 "subject": q.get("subject"), "answer": body.get("answer", ""),
                 "text": body.get("text", ""), "created": time.time(),
+                "guide": body.get("guide", ""), "explanation": body.get("explanation", ""),
                 "progress": ctx,
+                "focus_question": {k: focus.get(k) for k in
+                                   ("id", "subject", "prompt", "passage", "options", "answer", "type", "set")} if focus else None,
                 "question": {k: q.get(k) for k in ("prompt", "passage", "options", "answer", "type", "set")} if q else None,
             }
             (REQ / f"{rid}.json").write_text(json.dumps(payload, indent=1))
@@ -218,8 +298,24 @@ class Handler(BaseHTTPRequestHandler):
         self._json({"error": "not found"}, 404)
 
 
+def variant_waker() -> None:
+    """Wake the tutor when variant jobs pile up and nothing else is waiting."""
+    while True:
+        time.sleep(40)
+        try:
+            if pending_variant_jobs() == 0:
+                continue
+            waiting = [f for f in REQ.glob("*.json") if not (REP / f.name).exists()]
+            if waiting:
+                continue
+            wake_tutor("variant-batch", {"subject_name": "variant review"}, None, "variant")
+        except Exception:
+            continue
+
+
 def main() -> None:
     load_bank()
+    threading.Thread(target=variant_waker, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     print(f"GED practice GUI → http://127.0.0.1:{PORT}  ({len(BY_ID)} questions)")
     try:
