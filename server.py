@@ -98,26 +98,21 @@ def grade(q: dict, given: str) -> tuple[bool | None, str]:
         correct = norm(given)[:1] == str(q["answer"]).strip().lower()[:1]
         return correct, q["answer"]
     if q["type"] == "fib":
-        want = norm(q["answer"])
-        variants = {want} | {norm(a) for a in q.get("accept", [])}
+        variants = [norm(q["answer"])] + [norm(a) for a in q.get("accept", [])]
+        tight = {v.replace(" ", "") for v in variants}
         g = norm(given)
-        if g in variants:
+        gt = g.replace(" ", "")
+        if g in variants or gt in tight:
             return True, q["answer"]
-        # typo tolerance: near-miss spellings still count
+        # typo tolerance for word answers only; numbers and fractions must match
         for v in variants:
-            if not v:
+            if len(v) < 3 or not re.search(r"[a-z]{3}", v):
                 continue
-            if len(v) <= 6:
-                if _lev(g, v) <= 1:
-                    return True, q["answer"]
-            elif difflib.SequenceMatcher(None, g, v).ratio() >= 0.86:
+            vt = v.replace(" ", "")
+            if len(vt) >= 6 and difflib.SequenceMatcher(None, gt, vt).ratio() >= 0.87:
                 return True, q["answer"]
-        # numeric tolerance
-        try:
-            if abs(float(g.replace(",", "")) - float(re.sub(r"[^0-9.\-]", "", want))) < 1e-6:
+            if len(vt) < 6 and _lev(gt, vt) <= 1:
                 return True, q["answer"]
-        except ValueError:
-            pass
         return False, q["answer"]
     return None, q["answer"] or ""
 
