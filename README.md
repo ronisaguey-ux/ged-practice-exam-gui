@@ -33,6 +33,14 @@ ged --stop        # stop server + Jarvis
 | `bin/ged` | launcher |
 | `bin/ged-jarvis` | spawn/attach the tutor |
 
+## Scoring
+
+- Correct: **+1, plus +1 for every question already on your streak** (so 1, 2, 3, 4…).
+- Wrong: **−1, plus −1 for every question on the streak**, and the streak resets.
+- Open answers graded 1/2 earn a flat +1 (partial credit) and keep the streak.
+- Skipping costs a flat **−3** and keeps the streak. You cannot move past an
+  unanswered question without confirming the skip in a popup.
+
 ## Question types
 
 - **Multiple choice** — checked locally, instant feedback.
@@ -40,6 +48,16 @@ ged --stop        # stop server + Jarvis
 - **Open ended** — sent to Jarvis for a 0-2 grade and a one-line reason.
 - **Passage sets** — science questions come in sets of 2-3 that share one
   passage, table or experiment, exactly like the real test.
+- **Option notes** — after a multiple-choice check, every option gets a 10-30
+  word note explaining why it is right or wrong.
+- **Random order** — questions are shuffled per run, with passage sets kept
+  together.
+
+## Variants
+
+Every answered question is queued for Jarvis, who writes a reworded variant
+(different scenario, same skill) and schedules it to reappear after a random
+5-25 minute delay. Variants show up in later runs automatically.
 
 ## Jarvis
 
