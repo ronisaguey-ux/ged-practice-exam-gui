@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# ged-jarvis — keep Jarvis (the GED tutor agent) alive in a tmux session.
+#
+#   ged-jarvis          start if missing, then attach
+#   ged-jarvis --bg     start if missing, do not attach
+#   ged-jarvis --kill   stop the session
+set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+SESSION=jarvis
+CONFIG_HOME="$HOME/.config/ged-tutor"
+APP="/home/roni/Roni_workspace/ged-practice-exam-gui"
+SID_FILE="$HOME/.local/state/opencode/ged_tutor_session"
+mkdir -p "$(dirname "$SID_FILE")"
+
+if [ "${1:-}" = "--kill" ]; then
+  tmux kill-session -t "$SESSION" 2>/dev/null && echo "jarvis stopped"
+  exit 0
+fi
+
+if ! tmux has-session -t "$SESSION" 2>/dev/null; then
+  before=$(oc2 list --limit 30 2>/dev/null | awk '{print $1}' | sort)
+  tmux new-session -d -s "$SESSION" -c "$APP" \
+    "XDG_CONFIG_HOME=$CONFIG_HOME opencode2 $APP; exec bash"
+  for _ in $(seq 1 40); do
+    sleep 1
+    new=$(oc2 list --limit 30 2>/dev/null | awk '{print $1}' | sort | comm -13 <(echo "$before") - | tail -1)
+    if [ -n "${new:-}" ]; then
+      printf '%s\n' "$new" > "$SID_FILE"
+      break
+    fi
+  done
+  echo "jarvis started (session $(cat "$SID_FILE" 2>/dev/null || echo pending))"
+fi
+
+if [ "${1:-}" != "--bg" ]; then
+  tmux attach -t "$SESSION"
+fi
