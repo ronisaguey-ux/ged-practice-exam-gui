@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+<rect width="600" height="360" fill="#0f172a"/>
+<rect x="0" y="180" width="600" height="180" fill="#1e293b"/>
+<path d="M0 180 L280 180 L340 300 L600 300 L600 360 L0 360 Z" fill="#57534e"/>
+<path d="M280 180 L340 300 L340 360 L280 360 Z" fill="#7f1d1d"/>
+<text x="40" y="140" fill="#38bdf8" font-size="14" font-family="sans-serif">ocean</text>
+<text x="430" y="150" fill="#a3a3a3" font-size="14" font-family="sans-serif">continent</text>
+<path d="M300 170 L300 320" stroke="#f59e0b" stroke-width="3" marker-end="url(#x)"/>
+<defs><marker id="x" markerWidth="10" markerHeight="10" refX="5" refY="9" orient="auto"><path d="M0,0 L10,0 L5,10 z" fill="#f59e0b"/></marker></defs>
+<circle cx="330" cy="250" r="5" fill="#f97316"/><circle cx="322" cy="285" r="5" fill="#f97316"/><circle cx="312" cy="320" r="5" fill="#f97316"/>
+<text x="360" y="250" fill="#f97316" font-size="12" font-family="sans-serif">magma rises</text>
+<text x="150" y="200" fill="#e2e8f0" font-size="12" font-family="sans-serif">trench</text>
+</svg>
