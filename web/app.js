@@ -2,13 +2,50 @@
 const $ = (s) => document.querySelector(s);
 const state = {
   bank: null, subject: null, questions: [], i: 0,
-  answers: {}, score: 0, asked: 0, pending: new Set(),
+  answers: {}, score: 0, asked: 0,
+  points: 0, streak: 0, focusId: null, mentionIdx: 0, mentionHits: [],
 };
 
 async function api(path, body) {
   const opt = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
   const r = await fetch(path, opt);
   return r.json();
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* Group questions so a passage set stays together, then shuffle the groups. */
+function randomOrder(questions) {
+  const groups = new Map();
+  for (const q of questions) {
+    const key = q.set || q.id;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(q);
+  }
+  const out = [];
+  for (const g of shuffle([...groups.values()])) out.push(...g);
+  return out;
+}
+
+function ctx() {
+  const meta = state.bank.subjects[state.subject] || {};
+  return {
+    subject: state.subject, subject_name: meta.name || state.subject,
+    index: state.i + 1, total: state.questions.length,
+    score: state.score, asked: state.asked, points: state.points, streak: state.streak,
+  };
+}
+
+function paintScore() {
+  $("#points").textContent = `${state.points} pts`;
+  $("#streak").textContent = `streak ${state.streak}`;
+  $("#score").textContent = `${state.score} / ${state.asked}`;
 }
 
 /* ---------------------------------------------------------------- home */
@@ -28,26 +65,14 @@ async function boot() {
 
 function start(subject) {
   state.subject = subject;
-  state.questions = state.bank.questions.filter((q) => q.subject === subject);
+  state.questions = randomOrder(state.bank.questions.filter((q) => q.subject === subject));
   state.i = 0; state.answers = {}; state.score = 0; state.asked = 0;
+  state.points = 0; state.streak = 0; state.focusId = null;
   $("#home").classList.add("hidden");
   $("#summary").classList.add("hidden");
   $("#test").classList.remove("hidden");
+  paintScore();
   render();
-}
-
-
-function ctx() {
-  const meta = state.bank.subjects[state.subject] || {};
-  return {
-    subject: state.subject,
-    subject_name: meta.name || state.subject,
-    index: state.i + 1,
-    total: state.questions.length,
-    score: state.score,
-    asked: state.asked,
-    answered: Object.keys(state.answers).filter((k) => !k.startsWith("done-")).length,
-  };
 }
 
 /* ---------------------------------------------------------------- test */
@@ -58,7 +83,7 @@ function render() {
   const total = state.questions.length;
   $("#counter").textContent = `${state.i + 1} / ${total}`;
   $("#fill").style.width = `${((state.i + 1) / total) * 100}%`;
-  $("#score").textContent = `${state.score} / ${state.asked}`;
+  paintScore();
   $("#feedback").classList.add("hidden");
 
   $("#setline").classList.toggle("hidden", !item.set);
@@ -81,7 +106,9 @@ function render() {
       const row = document.createElement("div");
       row.className = "opt" + (saved === "ABCD"[idx] ? " sel" : "");
       row.dataset.letter = "ABCD"[idx];
-      row.innerHTML = `<span class="key">${"ABCD"[idx]}</span><span>${text}</span>`;
+      const note = (item.option_notes || [])[idx];
+      row.innerHTML = `<span class="key">${"ABCD"[idx]}</span><span>${text}</span>`
+        + (note ? `<div class="note hidden">${note}</div>` : "");
       row.onclick = () => {
         box.querySelectorAll(".opt").forEach((o) => o.classList.remove("sel"));
         row.classList.add("sel");
@@ -105,6 +132,23 @@ function render() {
   }
 }
 
+/* Points: +1 plus +1 per question already on the streak; a miss costs the same. */
+function award(correct) {
+  if (correct === true) {
+    const gain = 1 + state.streak;
+    state.points += gain;
+    state.streak += 1;
+    return `+${gain} pts`;
+  }
+  if (correct === false) {
+    const loss = 1 + state.streak;
+    state.points -= loss;
+    state.streak = 0;
+    return `−${loss} pts`;
+  }
+  return "";
+}
+
 async function check() {
   const item = q();
   const given = state.answers[item.id] || "";
@@ -112,33 +156,52 @@ async function check() {
 
   if (item.type === "open") {
     showFeedback("", "Sent to Jarvis for grading…", null, true);
-    const { request_id } = await api("/api/help", { id: item.id, kind: "grade", answer: given, context: ctx() });
+    showTyping("grade");
+    const { request_id } = await api("/api/help", {
+      id: item.id, kind: "grade", answer: given, context: ctx(),
+      guide: item.answer || "", explanation: item.explanation || "",
+    });
     const reply = await waitReply(request_id);
-    showFeedback("", reply || "Jarvis is not answering. Compare with the model answer in the explanation.", null, true);
+    hideTyping();
+    const m = /SCORE\s*[:=]\s*([0-2])/i.exec(reply || "");
+    const score = m ? Number(m[1]) : null;
+    let delta = "";
     if (!state.answers[`done-${item.id}`]) {
       state.asked++; state.answers[`done-${item.id}`] = true;
-      $("#score").textContent = `${state.score} / ${state.asked}`;
+      if (score !== null) {
+        if (score === 2) { delta = award(true); state.score++; }
+        else if (score === 1) { state.points += 1; delta = "+1 pt (partial)"; }
+        else { delta = award(false); }
+      }
     }
+    paintScore();
+    const clean = (reply || "").replace(/SCORE\s*[:=]\s*[0-2]\s*/i, "").trim();
+    const head = score === null ? "Jarvis' take" : `Score ${score}/2${delta ? `  (${delta})` : ""}`;
+    showFeedback(head, clean || "No answer from Jarvis yet.", score === 2, score === null);
     return;
   }
 
   const res = await api("/api/answer", { id: item.id, answer: given });
+  let delta = "";
   if (!state.answers[`done-${item.id}`]) {
     state.asked++;
     if (res.correct) state.score++;
     state.answers[`done-${item.id}`] = true;
+    delta = award(res.correct);
   }
-  $("#score").textContent = `${state.score} / ${state.asked}`;
+  paintScore();
 
   if (item.type === "mcq") {
     document.querySelectorAll(".opt").forEach((o) => {
       const l = o.dataset.letter;
       if (l === res.expected) o.classList.add("good");
       else if (l === given) o.classList.add("bad");
+      const note = o.querySelector(".note");
+      if (note) note.classList.remove("hidden");
     });
   }
-  showFeedback(res.correct ? "Correct" : `Not quite — answer: ${res.expected}`,
-    res.explanation || "", res.correct);
+  const title = (res.correct ? "Correct" : `Not quite — answer: ${res.expected}`) + (delta ? `  (${delta})` : "");
+  showFeedback(title, res.explanation || "", res.correct);
 }
 
 function showFeedback(title, body, correct, neutral) {
@@ -149,6 +212,42 @@ function showFeedback(title, body, correct, neutral) {
 }
 
 /* ---------------------------------------------------------------- tutor */
+
+/* --- working indicator ------------------------------------------------- */
+const VERBS = {
+  hint: ["thinking", "rereading the question", "looking for a nudge", "checking the key"],
+  why: ["thinking", "checking the reasoning", "comparing the options", "reading the passage"],
+  grade: ["reading your answer", "checking it against the guide", "scoring", "writing feedback"],
+  chat: ["thinking", "checking the bank", "searching the web", "writing a reply"],
+};
+let typingTimer = null;
+
+function showTyping(kind) {
+  const log = $("#chatlog");
+  const d = document.createElement("div");
+  d.className = "msg bot typing";
+  d.id = "typing";
+  log.appendChild(d);
+  const verbs = VERBS[kind] || VERBS.chat;
+  let i = 0;
+  const started = Date.now();
+  const paint = () => {
+    const secs = Math.round((Date.now() - started) / 1000);
+    d.innerHTML = `<span class="verb">${verbs[i % verbs.length]}</span><span class="dots"><i></i><i></i><i></i></span><span class="secs">${secs}s</span>`;
+  };
+  paint();
+  clearInterval(typingTimer);
+  typingTimer = setInterval(() => { i++; paint(); }, 1800);
+  log.scrollTop = log.scrollHeight;
+}
+
+function hideTyping() {
+  clearInterval(typingTimer);
+  typingTimer = null;
+  const el = $("#typing");
+  if (el) el.remove();
+}
+
 async function waitReply(id, tries = 60) {
   for (let k = 0; k < tries; k++) {
     const r = await api(`/api/help/${id}`);
@@ -162,11 +261,14 @@ async function waitReply(id, tries = 60) {
 async function askTutor(kind, text) {
   const item = q();
   addMsg("me", text || kind);
-  setTutorState("thinking");
+  setTutorState("working");
+  showTyping(kind);
   const { request_id } = await api("/api/help", {
-    id: item.id, kind, text: text || "", answer: state.answers[item.id] || "", context: ctx(),
+    id: item.id, kind, text: text || "", answer: state.answers[item.id] || "",
+    context: ctx(), focus_id: state.focusId || null,
   });
   const reply = await waitReply(request_id);
+  hideTyping();
   setTutorState("ready");
   addMsg("bot", reply || "No answer from Jarvis yet — try again in a moment.");
 }
@@ -182,6 +284,41 @@ function addMsg(who, text) {
 
 function setTutorState(s) { $("#tutor-state").textContent = s; }
 
+/* ---------------------------------------------------------------- @mentions */
+function openMention(query) {
+  const all = state.bank.questions;
+  const ql = query.toLowerCase();
+  state.mentionHits = all
+    .filter((x) => !ql || x.prompt.toLowerCase().includes(ql) || x.id.includes(ql))
+    .slice(0, 8);
+  const box = $("#mention");
+  if (!state.mentionHits.length) { box.classList.add("hidden"); return; }
+  state.mentionIdx = 0;
+  box.innerHTML = state.mentionHits
+    .map((x, i) => `<div class="mention-item${i === 0 ? " on" : ""}" data-id="${x.id}">
+        <span class="mid">${x.id}</span><span>${x.prompt.slice(0, 70)}</span></div>`)
+    .join("");
+  box.classList.remove("hidden");
+  box.querySelectorAll(".mention-item").forEach((el) => {
+    el.onmousedown = (e) => { e.preventDefault(); pickMention(el.dataset.id); };
+  });
+}
+
+function closeMention() { $("#mention").classList.add("hidden"); state.mentionHits = []; }
+
+function pickMention(id) {
+  state.focusId = id;
+  const inp = $("#chatinput");
+  inp.value = inp.value.replace(/@[^@]*$/, "");
+  const item = state.bank.questions.find((x) => x.id === id);
+  const chip = $("#focus");
+  chip.innerHTML = `<span>Asking about <b>${id}</b> — ${(item.prompt || "").slice(0, 60)}</span><button type="button" id="clearfocus">×</button>`;
+  chip.classList.remove("hidden");
+  $("#clearfocus").onclick = () => { state.focusId = null; chip.classList.add("hidden"); };
+  closeMention();
+  inp.focus();
+}
+
 /* ---------------------------------------------------------------- events */
 $("#btn-home").onclick = () => { $("#test").classList.add("hidden"); $("#home").classList.remove("hidden"); };
 $("#btn-tutor").onclick = () => $("#tutor").scrollIntoView({ behavior: "smooth" });
@@ -189,36 +326,91 @@ $("#btn-check").onclick = check;
 $("#btn-hint").onclick = () => askTutor("hint", "Give me a hint for this one.");
 $("#btn-why").onclick = () => askTutor("why", "Why is that the answer?");
 $("#btn-prev").onclick = () => { if (state.i > 0) { state.i--; render(); } };
-$("#btn-next").onclick = () => {
+function advance() {
   if (state.i < state.questions.length - 1) { state.i++; render(); }
   else finish();
-};
+}
+
+function tryNext() {
+  const item = q();
+  const answered = state.answers[`done-${item.id}`] || state.answers[`skip-${item.id}`];
+  if (answered) { advance(); return; }
+  openSkip(item);
+}
+
+function openSkip(item) {
+  const box = $("#modal");
+  box.innerHTML = `<div class="modal-card">
+      <h3>Skip this question?</h3>
+      <p>You have not answered it. Skipping costs <b>3 points</b> and does not break your streak (${state.streak}).</p>
+      <div class="modal-actions">
+        <button class="ghost" id="modal-cancel">Keep working</button>
+        <button class="primary" id="modal-skip">Skip (−3)</button>
+      </div>
+    </div>`;
+  box.classList.remove("hidden");
+  $("#modal-cancel").onclick = () => box.classList.add("hidden");
+  $("#modal-skip").onclick = () => {
+    state.points -= 3;
+    state.answers[`skip-${item.id}`] = true;
+    box.classList.add("hidden");
+    paintScore();
+    advance();
+  };
+}
+
+$("#btn-next").onclick = tryNext;
+
+$("#chatinput").addEventListener("input", (e) => {
+  const v = e.target.value;
+  const m = /@([^@]*)$/.exec(v);
+  if (m) openMention(m[1].trim()); else closeMention();
+});
+
+$("#chatinput").addEventListener("keydown", (e) => {
+  if ($("#mention").classList.contains("hidden")) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    state.mentionIdx = (state.mentionIdx + (e.key === "ArrowDown" ? 1 : -1) + state.mentionHits.length) % state.mentionHits.length;
+    $("#mention").querySelectorAll(".mention-item").forEach((el, i) =>
+      el.classList.toggle("on", i === state.mentionIdx));
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    const hit = state.mentionHits[state.mentionIdx];
+    if (hit) pickMention(hit.id);
+  } else if (e.key === "Escape") {
+    closeMention();
+  }
+});
+
 $("#chatform").onsubmit = (e) => {
   e.preventDefault();
   const v = $("#chatinput").value.trim();
-  if (!v) return;
+  if (!v && !state.focusId) return;
   $("#chatinput").value = "";
-  askTutor("chat", v);
+  closeMention();
+  askTutor("chat", v || "Tell me about the question I pointed at.");
 };
 
 function finish() {
   $("#test").classList.add("hidden");
   $("#summary").classList.remove("hidden");
   const pct = state.asked ? Math.round((state.score / state.asked) * 100) : 0;
-  $("#summaryline").textContent = `You answered ${state.asked} questions and got ${state.score} right (${pct}%).`;
+  $("#summaryline").textContent =
+    `${state.asked} answered, ${state.score} right (${pct}%). Points: ${state.points}. Best streak: ${state.streak}.`;
 }
 
 document.addEventListener("keydown", (e) => {
   if ($("#test").classList.contains("hidden")) return;
+  if (document.activeElement && document.activeElement.id === "chatinput") return;
   const item = q();
   if (["1", "2", "3", "4"].includes(e.key) && item.type === "mcq") {
-    const idx = Number(e.key) - 1;
     const rows = document.querySelectorAll(".opt");
-    if (rows[idx]) rows[idx].click();
+    if (rows[Number(e.key) - 1]) rows[Number(e.key) - 1].click();
   } else if (e.key === "Enter" && !e.shiftKey && e.target.tagName !== "TEXTAREA") {
     e.preventDefault(); check();
   } else if (e.key.toLowerCase() === "n") {
-    $("#btn-next").click();
+    tryNext();
   }
 });
 
