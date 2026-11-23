@@ -65,8 +65,19 @@ def grade(q: dict, given: str) -> tuple[bool | None, str]:
     return None, q["answer"] or ""
 
 
-def wake_tutor(request_id: str) -> None:
-    msg = f"ged: new request {request_id} — call ged_pending_requests, then ged_reply"
+def wake_tutor(request_id: str, ctx: dict | None = None, q: dict | None = None, kind: str = "chat") -> None:
+    ctx = ctx or {}
+    parts = [f"ged: new request {request_id}"]
+    if ctx:
+        subj = ctx.get("subject_name") or ctx.get("subject") or "?"
+        pos = f"{ctx.get('index', '?')}/{ctx.get('total', '?')}"
+        parts.append(f"{subj} question {pos}")
+        if "score" in ctx:
+            parts.append(f"score {ctx.get('score')}/{ctx.get('asked', 0)}")
+        if ctx.get("streak"):
+            parts.append(f"streak {ctx['streak']}")
+    parts.append(f"kind={kind}")
+    msg = " — ".join(parts) + " — call ged_pending_requests for the full question and stats, then ged_reply"
     # The tutor lives in a tmux pane; typing into it is the wake.
     try:
         if subprocess.run(["tmux", "has-session", "-t", "jarvis"],
@@ -183,14 +194,19 @@ class Handler(BaseHTTPRequestHandler):
             rid = uuid.uuid4().hex[:12]
             qid = body.get("id") or ""
             q = BY_ID.get(qid) or {}
+            ctx = body.get("context") or {}
             payload = {
                 "id": rid, "kind": body.get("kind", "chat"), "question_id": qid,
                 "subject": q.get("subject"), "answer": body.get("answer", ""),
                 "text": body.get("text", ""), "created": time.time(),
+                "progress": ctx,
                 "question": {k: q.get(k) for k in ("prompt", "passage", "options", "answer", "type", "set")} if q else None,
             }
             (REQ / f"{rid}.json").write_text(json.dumps(payload, indent=1))
-            wake_tutor(rid)
+            (DATA / "session.json").write_text(json.dumps(
+                {"updated": time.time(), "progress": ctx, "last_request": rid,
+                 "question_id": qid}, indent=1))
+            wake_tutor(rid, ctx, q, body.get("kind", "chat"))
             self._json({"request_id": rid})
             return
 
