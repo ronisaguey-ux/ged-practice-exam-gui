@@ -100,7 +100,10 @@ def run_notes(bank: dict) -> int:
 
 
 def run_fib(bank: dict) -> int:
-    todo = [q for q in bank["questions"] if q["type"] == "fib" and len(q.get("accept") or []) < 6]
+    def extras(q):
+        base = {str(q["answer"]).lower(), str(q["answer"]).replace(" ", "").lower()}
+        return [a for a in (q.get("accept") or []) if a not in base]
+    todo = [q for q in bank["questions"] if q["type"] == "fib" and len(extras(q)) < 5]
     print(f"fib: {len(todo)} to do", flush=True)
     done = 0
     for i in range(0, len(todo), 4):
