@@ -467,6 +467,7 @@ function openMention(query) {
   state.mentionHits = all
     .filter((x) => !ql || x.prompt.toLowerCase().includes(ql) || x.id.includes(ql))
     .slice(0, 8);
+  const count = all.length;
   const box = $("#mention");
   if (!state.mentionHits.length) {
     box.innerHTML = `<div class="mention-item"><span>${all.length ? "no match" : "answer a question first — @ lists what you have done"}</span></div>`;
@@ -474,10 +475,11 @@ function openMention(query) {
     return;
   }
   state.mentionIdx = 0;
-  box.innerHTML = state.mentionHits
-    .map((x, i) => `<div class="mention-item${i === 0 ? " on" : ""}" data-id="${x.id}">
+  box.innerHTML = `<div class="mention-head">${count} answered so far — pick one</div>`
+    + state.mentionHits
+      .map((x, i) => `<div class="mention-item${i === 0 ? " on" : ""}" data-id="${x.id}">
         <span class="mid">${x.id}</span><span>${x.prompt.slice(0, 70)}</span></div>`)
-    .join("");
+      .join("");
   box.classList.remove("hidden");
   box.querySelectorAll(".mention-item").forEach((el) => {
     el.onmousedown = (e) => { e.preventDefault(); pickMention(el.dataset.id); };
