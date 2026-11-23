@@ -351,6 +351,12 @@ def main() -> None:
             clean.append(q)
             seen.add(q["id"])
 
+    # flag the older short science drills so full passages stand out
+    for q in clean:
+        if q.get("set") and q.get("passage") and len(q["passage"].split()) < 120:
+            if not q["set"].startswith("QUICK CHECK"):
+                q["set"] = "QUICK CHECK · " + q["set"]
+
     merge_images(clean)
 
     bank = {
