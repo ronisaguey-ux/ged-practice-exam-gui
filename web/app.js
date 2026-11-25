@@ -231,6 +231,7 @@ async function unlock() {
 }
 
 async function boot() {
+  restoreChat();
   try {
     state.bank = await api("/api/questions");
   } catch (e) {
@@ -632,13 +633,36 @@ async function askTutor(kind, text) {
   addMsg("bot", reply || "No answer from Jarvis yet — try again in a moment.");
 }
 
-function addMsg(who, text) {
+const CHAT_KEY = "gedChat";
+
+function chatStore() {
+  try { return JSON.parse(localStorage.getItem(CHAT_KEY) || "[]"); } catch (e) { return []; }
+}
+
+function chatSave(who, text) {
+  const rows = chatStore();
+  rows.push({ w: who, t: String(text).slice(0, 4000), ts: Date.now() });
+  localStorage.setItem(CHAT_KEY, JSON.stringify(rows.slice(-200)));
+}
+
+function addMsg(who, text, opts) {
   const log = $("#chatlog");
   const d = document.createElement("div");
   d.className = `msg ${who === "me" ? "me" : "bot"}`;
   d.textContent = text;
   log.appendChild(d);
   log.scrollTop = log.scrollHeight;
+  if (!(opts && opts.restore)) chatSave(who, text);
+}
+
+function restoreChat() {
+  const log = $("#chatlog");
+  const rows = chatStore();
+  if (!rows.length) return false;
+  log.innerHTML = "";
+  rows.forEach((r) => addMsg(r.w === "me" ? "me" : "bot", r.t, { restore: true }));
+  log.scrollTop = log.scrollHeight;
+  return true;
 }
 
 function setTutorState(s) { $("#tutor-state").textContent = s; }
