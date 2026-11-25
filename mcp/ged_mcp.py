@@ -9,7 +9,9 @@ Run: python3 mcp/ged_mcp.py
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -827,17 +829,31 @@ def call(name: str, args: dict) -> dict:
         # the message is Jarvis's own: no canned preamble, no canned tail. Only a
         # one-line header so a wake is recognisable as coming from the tutor.
         wake = "GED TUTOR (Jarvis) needs you:\n\n" + text
-        try:
-            import subprocess
-            # same injection the cron wakes use: oc_send --async, session from the pin file
-            r = subprocess.run([str(Path.home() / ".local/bin/oc_send"), wake,
-                                "--session", sid, "--async"],
-                               capture_output=True, text=True, timeout=25)
-            ok = r.returncode == 0
-            return text_result(f"sent to Gideon ({sid}): {'ok' if ok else 'failed'}"
-                               + (f" {r.stderr.strip()[:120]}" if not ok else ""))
-        except Exception as exc:  # noqa: BLE001
-            return text_result(f"could not wake Gideon: {exc}")
+        script = str(Path.home() / ".local" / "bin" / "oc_send")
+        bun = str(Path.home() / ".local" / "bin" / "bun")
+        if not os.path.exists(bun):
+            bun = str(Path.home() / ".bun" / "bin" / "bun")
+        # oc_send is a bun script. Spawning it by path works only when `bun` is on
+        # the PATH of THIS process, which it is not when the tutor's MCP is started
+        # by the standalone server - so run it through bun explicitly, with the
+        # interpreter resolved by absolute path.
+        env = dict(os.environ)
+        env["PATH"] = str(Path.home() / ".local" / "bin") + ":" + env.get("PATH", "/usr/local/bin:/usr/bin:/bin")
+        attempts = []
+        if os.path.exists(bun):
+            attempts.append([bun, script, wake, "--session", sid, "--async"])
+        attempts.append([script, wake, "--session", sid, "--async"])
+        last = "no interpreter found"
+        for cmd in attempts:
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=25, env=env)
+            except Exception as exc:  # noqa: BLE001
+                last = str(exc)[:200]
+                continue
+            if r.returncode == 0:
+                return text_result(f"sent to Gideon ({sid}): ok")
+            last = (r.stderr or r.stdout or f"exit {r.returncode}").strip()[:200]
+        return text_result(f"could not wake Gideon: {last}")
 
     if name == "read_paper":
         doc = _read_paper()
