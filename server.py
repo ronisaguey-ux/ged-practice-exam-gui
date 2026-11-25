@@ -420,6 +420,13 @@ class Handler(BaseHTTPRequestHandler):
                         since = 0
             self._json(read_control(since))
             return
+        if path == "/api/bank_version":
+            try:
+                mtime = (DATA / "questions.json").stat().st_mtime
+            except OSError:
+                mtime = 0
+            self._json({"mtime": mtime, "total": len(BANK.get("questions") or [])})
+            return
         if path == "/api/paper":
             self._json(read_paper())
             return
@@ -547,6 +554,13 @@ class Handler(BaseHTTPRequestHandler):
                     except ValueError:
                         since = 0
             self._json(read_control(since))
+            return
+        if path == "/api/bank_version":
+            try:
+                mtime = (DATA / "questions.json").stat().st_mtime
+            except OSError:
+                mtime = 0
+            self._json({"mtime": mtime, "total": len(BANK.get("questions") or [])})
             return
         if path == "/api/paper":
             text = body.get("text")

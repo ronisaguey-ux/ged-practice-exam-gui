@@ -177,6 +177,28 @@ TOOLS = [
     },
     *CALC.TOOLS,
     {
+        "name": "add_question",
+        "description": ("Add a question to the bank. Every field of a real question is accepted: id, "
+                        "subject, type (mcq/fib/open), prompt, passage, options, answer, accept, "
+                        "explanation, set, skill, image, option_notes. Use it to grow a passage set to "
+                        "at least five questions: give the same `set` name and the same `passage` as "
+                        "the set it belongs to. An id is generated from the subject when you omit it."),
+        "inputSchema": {"type": "object", "properties": {
+            "subject": {"type": "string"}, "type": {"type": "string"},
+            "prompt": {"type": "string"}, "passage": {"type": "string"},
+            "options": {"type": "array", "items": {"type": "string"}},
+            "answer": {"type": "string"}, "accept": {"type": "array", "items": {"type": "string"}},
+            "explanation": {"type": "string"}, "set": {"type": "string"},
+            "skill": {"type": "string"}, "image": {"type": "string"},
+            "option_notes": {"type": "array", "items": {"type": "string"}},
+            "id": {"type": "string"}}, "required": ["subject", "type", "prompt", "answer"]},
+    },
+    {
+        "name": "delete_question",
+        "description": "Remove a question from the bank by id (use sparingly: an attempt history stays).",
+        "inputSchema": {"type": "object", "properties": {"id": {"type": "string"}}, "required": ["id"]},
+    },
+    {
         "name": "ui_state",
         "description": ("What the student's screen is showing right now: subject, question number and "
                         "total, the question itself with its options, the live score/points/streak, how "
@@ -711,6 +733,51 @@ def call(name: str, args: dict) -> dict:
 
     if name in {t["name"] for t in CALC.TOOLS}:
         return text_result(CALC.call(name, args))
+
+    if name == "add_question":
+        subj = str(args.get("subject") or "").strip()
+        qtype = str(args.get("type") or "mcq").strip()
+        prompt = str(args.get("prompt") or "").strip()
+        answer = args.get("answer")
+        if not subj or not prompt or answer is None:
+            return text_result("subject, type, prompt and answer are required")
+        b = read_bank()
+        qid = str(args.get("id") or "").strip()
+        if not qid:
+            prefix = {"math": "mat", "science": "sci", "social_studies": "soc", "rla": "rla"}.get(subj, subj[:3])
+            nums = [int(x["id"].split("-")[-1]) for x in b["questions"]
+                    if x["id"].startswith(prefix + "-") and x["id"].split("-")[-1].isdigit()]
+            qid = f"{prefix}-{(max(nums) + 1) if nums else 1:03d}"
+        if any(x["id"] == qid for x in b["questions"]):
+            return text_result(f"{qid} already exists")
+        q = {"id": qid, "subject": subj, "type": qtype, "set": args.get("set") or None,
+             "passage": args.get("passage"), "image": args.get("image"),
+             "prompt": prompt, "options": args.get("options") or [],
+             "answer": answer, "accept": args.get("accept") or [],
+             "explanation": str(args.get("explanation") or ""),
+             "skill": str(args.get("skill") or "")}
+        if args.get("option_notes"):
+            q["option_notes"] = args["option_notes"]
+        b["questions"].append(q)
+        write_bank(b)
+        with (DATA / "bank_changes.jsonl").open("a") as fh:
+            fh.write(json.dumps({"ts": round(time.time(), 3), "id": qid, "fields": ["add"],
+                                 "before": None, "after": q,
+                                 "reason": str(args.get("reason") or "added by tutor")[:300]},
+                                ensure_ascii=False) + "\n")
+        return text_result(json.dumps({"added": qid, "set": q.get("set"),
+                                       "set_size": sum(1 for x in b["questions"] if q.get("set") and x.get("set") == q.get("set"))},
+                                      indent=1))
+
+    if name == "delete_question":
+        qid = str(args.get("id") or "").strip()
+        b = read_bank()
+        keep = [q for q in b["questions"] if q["id"] != qid]
+        if len(keep) == len(b["questions"]):
+            return text_result(f"no question {qid}")
+        b["questions"] = keep
+        write_bank(b)
+        return text_result(f"deleted {qid}")
 
     if name == "ui_state":
         live = {}
