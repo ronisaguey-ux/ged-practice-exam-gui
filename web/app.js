@@ -104,6 +104,20 @@ function ctx() {
 
 let lastSaveAt = 0;
 
+const VIEW_KEY = "gedView";
+
+function saveView() {
+  try {
+    const view = !$("#test").classList.contains("hidden") ? "test"
+      : (!$("#notes").classList.contains("hidden") ? "sheet" : "home");
+    localStorage.setItem(VIEW_KEY, JSON.stringify({ view, subject: state.subject || "" }));
+  } catch (e) { /* private mode */ }
+}
+
+function savedView() {
+  try { return JSON.parse(localStorage.getItem(VIEW_KEY) || "null"); } catch (e) { return null; }
+}
+
 function saveSession() {
   if (state.offline) return;
   lastSaveAt = Date.now() / 1000;
@@ -248,6 +262,22 @@ async function boot() {
   loadBoard();
   try { sessions = await api("/api/sessions"); } catch (e) { sessions = {}; }
 
+  // a refresh must land you back where you were, not on the subject list
+  const want = savedView();
+  if (want && want.view === "test" && want.subject && sessions[want.subject]) {
+    const saved = sessions[want.subject];
+    $("#home").classList.add("hidden");
+    $("#notes").classList.add("hidden");
+    $("#test").classList.remove("hidden");
+    start(want.subject, saved && saved.state ? saved : undefined);
+    return;
+  }
+  if (want && want.view === "sheet") {
+    $("#home").classList.add("hidden");
+    showNotes();
+    return;
+  }
+
   const cards = Object.entries(state.bank.subjects).map(([k, m]) => ({
     key: k, name: m.name, n: state.bank.questions.filter((q) => q.subject === k).length,
     meta: `${m.time} min on the real test`,
@@ -307,6 +337,7 @@ function start(subject, saved) {
     state.points = 0; state.streak = 0;
   }
   state.focusId = null;
+  saveView();
   $("#home").classList.add("hidden");
   $("#summary").classList.add("hidden");
   $("#test").classList.remove("hidden");
@@ -319,6 +350,7 @@ function start(subject, saved) {
 function q() { return state.questions[state.i]; }
 
 function render() {
+  saveView();
   const item = q();
   const total = state.questions.length;
   $("#counter").textContent = `${state.i + 1} / ${total}`;
