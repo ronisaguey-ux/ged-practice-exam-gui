@@ -400,17 +400,54 @@ async function check() {
 
   const words = given.trim().split(/\s+/).filter(Boolean).length;
   if (item.type === "open" && words < 5) {
-    // a handful of words is a fill-in, not an essay — grade it here, no AI
-    const guide = String(item.answer || item.explanation || "").toLowerCase();
-    const hit = guide.includes(given.trim().toLowerCase());
+    /* A few words on an open question is a short answer. Grade it here only when
+       the comparison means something: equal to the key or an accepted form, in
+       either direction. A one-word answer against a sentence key ("water" vs
+       "pH 7 is neutral") is a broken key, not a wrong student - hand that to
+       Jarvis instead of costing a point. */
+    const flat = (t) => String(t || "").toLowerCase().replace(/\./g, "")
+      .replace(/\s+/g, " ").trim();
+    const g = flat(given);
+    const keys = [item.answer, ...(item.accept || [])].filter(Boolean).map(flat);
+    const exact = keys.some((k) => k === g);
+    const contained = keys.some((k) => k.length > 2 && g.length > 2 && (k.includes(g) || g.includes(k)));
+    const keyIsSentence = keys.some((k) => k.split(" ").length > 6);
+    if (!exact && !contained && (keyIsSentence || !keys.length)) {
+      const box0 = $("#feedback");
+      box0.className = "feedback";
+      box0.innerHTML = "Sent to Jarvis for grading…";
+      box0.classList.remove("hidden");
+      showTyping("grade");
+      const { request_id } = await api("/api/help", {
+        id: item.id, kind: "grade", answer: given, context: ctx(),
+        guide: item.answer || "", explanation: item.explanation || "",
+      });
+      const reply = await waitReply(request_id);
+      hideTyping();
+      const sm = /SCORE\s*[:=]\s*([0-2])/i.exec(reply || "");
+      const sc = sm ? Number(sm[1]) : null;
+      let d = "";
+      if (!state.answers[`done-${item.id}`]) {
+        state.asked++; state.answers[`done-${item.id}`] = true;
+        if (sc === 2) { d = award(true); state.score++; }
+        else if (sc === 1) { state.points += 1; d = "+1 pt (partial)"; }
+        else if (sc === 0) { d = award(false); }
+      }
+      paintScore(); saveSession();
+      const txt = (reply || "").replace(/SCORE\s*[:=]\s*[0-2]\s*/i, "").trim();
+      showFeedback(sc === null ? "Jarvis' take" : `Score ${sc}/2${d ? `  (${d})` : ""}`,
+        txt || "No answer from Jarvis yet.", sc === 2, sc === null);
+      return;
+    }
+    const hit = exact || contained;
     let delta = "";
     if (!state.answers[`done-${item.id}`]) {
       state.asked++; state.answers[`done-${item.id}`] = true;
       if (hit) { delta = award(true); state.score++; } else { delta = award(false); }
     }
     paintScore(); saveSession();
-    showFeedback(`${hit ? "Close enough" : "Not quite"}${delta ? `  (${delta})` : ""}`,
-      `${item.answer || item.explanation || ""}<br><br><small>Short answers are checked here — write 10-20 words to get Jarvis' grading.</small>`,
+    showFeedback(`${hit ? "Correct" : "Not quite"}${delta ? `  (${delta})` : ""}`,
+      `${item.answer || item.explanation || ""}<br><br><small>Accepted: ${keys.join(" / ") || "—"}</small>`,
       hit);
     return;
   }

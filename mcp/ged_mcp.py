@@ -42,9 +42,11 @@ TOOLS = [
     {
         "name": "update_question",
         "description": ("Change any question in the bank on the fly: prompt, passage, options, answer, "
-                        "accept list, explanation, image, type, subject, skill, set, due. Give the id "
-                        "and the fields to change; `reason` is recorded in data/bank_changes.jsonl so "
-                        "every edit is traceable. Returns the question after the change."),
+                        "accept list, explanation, image, type, subject, skill, set, due. This is also "
+                        "how you rewrite what counts as correct - set `answer` for the key itself, and "
+                        "`accept_add` to add answers that should also be marked right (e.g. 'Water', "
+                        "'pH 7', 'ph7') without touching the ones already accepted. `reason` is "
+                        "recorded in data/bank_changes.jsonl. Returns the question after the change."),
         "inputSchema": {"type": "object", "properties": {
             "id": {"type": "string"}, "patch": {"type": "object"},
             "reason": {"type": "string"}}, "required": ["id", "patch"]},
@@ -110,8 +112,10 @@ TOOLS = [
             "ts": {"type": "number", "description": "pick the attempt nearest this timestamp instead"},
             "given": {"type": "string", "description": "the answer to grade (default: what they gave)"},
             "answer_key": {"type": "string", "description": "corrected expected answer, also written to the bank"},
-            "reason": {"type": "string", "description": "why this regrade is justified (required)"}},
-            "required": ["id", "reason"]},
+            "verdict": {"type": "boolean", "description": "for open-ended answers: your judgement of whether it is correct"},
+            "adjust_points": {"type": "boolean", "description": "move the student's score to match the new verdict (default true)"},
+            "reason": {"type": "string", "description": "one line saying why; recorded with the regrade"}},
+            "required": ["id"]},
     },
     {
         "name": "award_points",
@@ -233,9 +237,23 @@ def _history_rows() -> list[dict]:
     return rows
 
 
+def _live_subject() -> str:
+    """The subject of the run in progress, as the app records it."""
+    try:
+        doc = json.loads((DATA / "session.json").read_text())
+    except Exception:
+        return ""
+    prog = doc.get("progress") or {}
+    return str(prog.get("subject") or doc.get("subject") or "")
+
+
 def _session_path(subject: str | None) -> Path:
-    if subject:
-        return SESSIONS / f"{subject}.json"
+    """The app keeps one counter per subject under data/sessions/<subject>.json;
+    data/session.json is only a snapshot of the live run. A point change has to
+    land on the subject file or the UI never sees it."""
+    subj = subject or _live_subject()
+    if subj:
+        return SESSIONS / f"{subj}.json"
     return DATA / "session.json"
 
 
@@ -293,6 +311,8 @@ def _write_paper(text: str, by: str = "jarvis") -> dict:
 
 def _read_progress(subject: str | None) -> dict:
     path = _session_path(subject)
+    if not path.exists() and not subject:
+        path = DATA / "session.json"
     if not path.exists():
         return {}
     try:
@@ -323,16 +343,25 @@ def call(name: str, args: dict) -> dict:
 
     if name == "update_question":
         patch = args.get("patch") or {}
-        allowed = {"prompt", "passage", "options", "answer", "accept", "explanation", "image",
-                   "type", "subject", "skill", "set", "due"}
+        allowed = {"prompt", "passage", "options", "answer", "accept", "accept_add", "explanation",
+                   "image", "type", "subject", "skill", "set", "due"}
         unknown = [k for k in patch if k not in allowed]
         if unknown:
             return text_result(f"unknown field(s): {', '.join(unknown)}; allowed: {', '.join(sorted(allowed))}")
         b = read_bank()
         for q in b["questions"]:
             if q["id"] == args.get("id"):
-                before = {k: q.get(k) for k in patch}
+                before = {k: q.get(k) for k in patch if k != "accept_add"}
+                add = patch.pop("accept_add", None)
                 q.update(patch)
+                if add:
+                    have = list(q.get("accept") or [])
+                    low = {str(a).strip().lower() for a in have}
+                    for a in ([add] if isinstance(add, str) else list(add)):
+                        if str(a).strip().lower() not in low:
+                            have.append(str(a))
+                            low.add(str(a).strip().lower())
+                    q["accept"] = have
                 write_bank(b)
                 with (DATA / "bank_changes.jsonl").open("a") as fh:
                     fh.write(json.dumps({"ts": round(time.time(), 3), "id": q["id"],
@@ -447,15 +476,16 @@ def call(name: str, args: dict) -> dict:
 
     if name == "regrade":
         qid = str(args.get("id") or "").strip()
-        reason = str(args.get("reason") or "").strip()
-        if not reason:
-            return text_result("reason is required: say why this regrade is justified")
+        reason = str(args.get("reason") or "tutor correction").strip()
         bank = read_bank()
         q = next((x for x in bank["questions"] if x["id"] == qid), None)
         if not q:
             return text_result(f"no question {qid}")
         rows = _history_rows()
-        cands = sorted((r for r in rows if r.get("id") == qid),
+        # an attempt is recorded under the id that was SERVED - for a reworded
+        # question that is the variant id, not the source question
+        variant_ids = {x["id"] for x in bank["questions"] if x.get("source") == qid}
+        cands = sorted((r for r in rows if r.get("id") == qid or r.get("id") in variant_ids),
                        key=lambda r: float(r.get("ts") or 0))
         row = None
         if cands:
@@ -470,7 +500,8 @@ def call(name: str, args: dict) -> dict:
                     return text_result(
                         f"{qid} has {len(cands)} recorded attempt(s); attempt {back} does not exist")
         elif args.get("given") is None:
-            return text_result(f"no attempt recorded for {qid} and no `given` answer to grade")
+            return text_result(f"no attempt recorded for {qid} and no `given` answer to grade - "
+                               f"pass the answer they gave and I can still check it against the key")
         key_changed = None
         if args.get("answer_key") is not None:
             key_changed = {"from": q.get("answer"), "to": args["answer_key"]}
@@ -479,6 +510,28 @@ def call(name: str, args: dict) -> dict:
             write_bank(bank)
         given = args.get("given") if args.get("given") is not None else (row or {}).get("given", "")
         correct, expected = _grade(q, str(given))
+        rule = "the app's grader"
+        if correct is None:
+            # open-ended: the app hands these to a tutor, so a regrade needs a
+            # verdict. Use the one supplied, else fall back to the short-answer
+            # rule the page uses for a handful of words.
+            if args.get("verdict") is not None:
+                v = args["verdict"]
+                if isinstance(v, bool):
+                    correct = v
+                elif isinstance(v, (int, float)):
+                    correct = v >= 1          # 2 or 1 out of 2 counts as correct, 0 does not
+                else:
+                    correct = str(v).strip().lower() in ("1", "2", "true", "yes", "correct")
+                rule = "verdict supplied"
+            else:
+                g = re.sub(r"\s+", " ", str(given)).strip().lower().rstrip(".")
+                k = re.sub(r"\s+", " ", str(expected)).strip().lower().rstrip(".")
+                if g and k:
+                    correct = (g in k) or (k in g)
+                    rule = "the app's short-answer rule (key contains the answer)"
+                else:
+                    correct = None
         prev = (row or {}).get("correct")
         entry = {
             "ts": round(time.time(), 3), "id": qid, "subject": q.get("subject"),
@@ -489,11 +542,24 @@ def call(name: str, args: dict) -> dict:
         }
         with HISTORY.open("a") as fh:
             fh.write(json.dumps(entry) + "\n")
+        applied = None
+        if args.get("adjust_points") is not False and prev is not None and correct is not None and bool(prev) != bool(correct):
+            subj = q.get("subject")
+            streak = int(_read_progress(subj).get("streak") or 0)
+            if correct:
+                gain = 1 + streak
+                applied = _apply_points(subj, gain, f"regrade {qid}: {reason}"[:280], streak=streak + 1)
+            else:
+                loss = 1 + streak
+                applied = _apply_points(subj, -loss, f"regrade {qid}: {reason}"[:280], streak=0)
+        note = None if row else "no recorded attempt for this question; graded the answer you passed against the key"
         return text_result(json.dumps(
             {"regraded": qid, "attempt_ts": (row or {}).get("ts"),
              "student_gave": str(given)[:200], "was": prev, "now": correct,
              "expected": expected, "answer_key_change": key_changed,
-             "attempts_on_record": len(cands)}, indent=1, ensure_ascii=False))
+             "attempts_on_record": len(cands), "note": note, "graded_by": rule,
+             "points": applied},
+            indent=1, ensure_ascii=False))
 
     if name == "award_points":
         reason = str(args.get("reason") or "award")
