@@ -198,10 +198,12 @@ TOOLS = [
     },
     {
         "name": "alert_gideon",
-        "description": ("Wake Gideon, the owner's assistant, with a message. Use it when something is "
-                        "broken in a way you cannot fix with your own tools (the app fails to load, a "
-                        "tool of yours errors, the bank will not save) or when the owner needs a "
-                        "decision. Say what is broken, what you tried, and what you need."),
+        "description": ("Wake Gideon, the owner's assistant, and say exactly what you need in your own "
+                        "words - your message is delivered verbatim. Write it like a bug report to a "
+                        "colleague: what is broken, what you tried, what you need fixed or decided. "
+                        "Use it when you cannot fix something with your own tools (the app will not "
+                        "load, one of your tools errors, the bank will not save) or when the owner "
+                        "has to decide something."),
         "inputSchema": {"type": "object", "properties": {
             "message": {"type": "string"}}, "required": ["message"]},
     },
@@ -745,19 +747,19 @@ def call(name: str, args: dict) -> dict:
         return text_result(f"queued {action}; the page picks it up within a few seconds")
 
     if name == "alert_gideon":
-        text = str(args.get("message") or "").strip()
-        if not text:
+        raw = str(args.get("message") or "").strip()
+        if not raw:
             return text_result("message is required")
+        # a caller that escaped newlines into the JSON string still gets real ones
+        text = raw.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", "\t")
         pin = Path.home() / ".local/state/opencode/openbot_session"
         try:
             sid = pin.read_text().strip().splitlines()[0].strip()
         except Exception:
             return text_result("no Gideon session pin found - could not send")
-        wake = ("GED TUTOR ALERT - Jarvis, the GED tutor, is blocked and needs you now.\n\n"
-                + text
-                + "\n\nFix it, then tell the owner on tele in one line what was broken "
-                  "and what you changed. The app is http://127.0.0.1:8765 (config in "
-                  "~/.config/ged-tutor, MCP tools are ged_*).")
+        # the message is Jarvis's own: no canned preamble, no canned tail. Only a
+        # one-line header so a wake is recognisable as coming from the tutor.
+        wake = "GED TUTOR (Jarvis) needs you:\n\n" + text
         try:
             import subprocess
             # same injection the cron wakes use: oc_send --async, session from the pin file
