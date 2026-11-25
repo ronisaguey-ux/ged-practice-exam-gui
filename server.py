@@ -245,6 +245,66 @@ def wake_tutor(request_id: str, ctx: dict | None = None, q: dict | None = None, 
         pass
 
 
+HISTORY = DATA / "history.jsonl"
+NOTES = DATA / "notes.json"
+
+
+def read_notes() -> list[dict]:
+    if not NOTES.exists():
+        return []
+    try:
+        raw = json.loads(NOTES.read_text())
+    except Exception:
+        return []
+    rows = raw.get("notes") if isinstance(raw, dict) else raw
+    return rows if isinstance(rows, list) else []
+
+
+def write_notes(rows: list[dict]) -> None:
+    NOTES.write_text(json.dumps({"notes": rows}, indent=1, ensure_ascii=False))
+
+
+def upsert_note(body: dict) -> dict:
+    """One note store for both sides: the student writes their own, Jarvis adds
+    the ones it teaches. An id is kept stable so an edit is an edit, not a new
+    note; updated/updated_by are what the cheat sheet sorts and labels by."""
+    rows = read_notes()
+    nid = str(body.get("id") or "").strip()
+    now = time.time()
+    if not nid:
+        nid = "n" + uuid.uuid4().hex[:8]
+    for row in rows:
+        if row.get("id") == nid:
+            if "title" in body:
+                row["title"] = str(body.get("title") or "")[:200]
+            if "body" in body:
+                row["body"] = str(body.get("body") or "")[:6000]
+            if "subject" in body:
+                row["subject"] = str(body.get("subject") or "")[:40]
+            row["updated"] = round(now, 3)
+            row["updated_by"] = str(body.get("by") or "student")[:20]
+            write_notes(rows)
+            return row
+    row = {"id": nid,
+           "title": str(body.get("title") or "Note")[:200],
+           "body": str(body.get("body") or "")[:6000],
+           "subject": str(body.get("subject") or "")[:40],
+           "created": round(now, 3), "updated": round(now, 3),
+           "updated_by": str(body.get("by") or "student")[:20]}
+    rows.append(row)
+    write_notes(rows)
+    return row
+
+
+def delete_note(nid: str) -> bool:
+    rows = read_notes()
+    keep = [r for r in rows if r.get("id") != nid]
+    if len(keep) == len(rows):
+        return False
+    write_notes(keep)
+    return True
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "GED/1.0"
 
@@ -357,6 +417,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"error": "no session"}, 404)
                 return
             self._json(json.loads(f.read_text()))
+            return
+        if path == "/api/notes":
+            rows = sorted(read_notes(), key=lambda r: float(r.get("updated") or 0), reverse=True)
+            subj = ""
+            for part in query.split("&"):
+                if part.startswith("subject="):
+                    subj = part.split("=", 1)[1]
+            if subj:
+                rows = [r for r in rows if (r.get("subject") or "") == subj]
+            self._json({"notes": rows})
             return
         if path == "/api/scoreboard":
             self._json({"subjects": scoreboard()})
@@ -471,6 +541,18 @@ class Handler(BaseHTTPRequestHandler):
                  "question_id": qid}, indent=1))
             wake_tutor(rid, ctx, q, body.get("kind", "chat"))
             self._json({"request_id": rid})
+            return
+
+        if path == "/api/notes":
+            if body.get("delete"):
+                ok = delete_note(str(body.get("id") or ""))
+                self._json({"ok": ok})
+                return
+            if not str(body.get("body") or "").strip() and not str(body.get("title") or "").strip():
+                self._json({"error": "note is empty"}, 400)
+                return
+            body["by"] = body.get("by") or "student"
+            self._json({"ok": True, "note": upsert_note(body)})
             return
 
         if path == "/api/session":
