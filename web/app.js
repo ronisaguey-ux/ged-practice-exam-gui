@@ -616,96 +616,146 @@ function pickMention(id) {
 $("#btn-home").onclick = () => { $("#test").classList.add("hidden"); $("#home").classList.remove("hidden"); };
 $("#btn-tutor").onclick = () => $("#tutor").scrollIntoView({ behavior: "smooth" });
 
-/* ---------------------------------------------------------------- cheat sheet */
-let editingNote = null;
+/* ------------------------------------------------------------ cheat sheet */
+/* A floating sheet of paper: draggable by its bar, minimisable, expandable,
+   closable, and its position/size survive a reload. Autosaves; Jarvis writes
+   into the same text. */
+let paperTimer = null;
+let paperDirty = false;
 
-function esc(s) {
-  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function paperPanel() { return $("#notes"); }
+
+function paperGeometrySave() {
+  const el = paperPanel();
+  const r = el.getBoundingClientRect();
+  localStorage.setItem("gedPaper", JSON.stringify({
+    left: r.left, top: r.top, width: r.width, height: r.height,
+    min: el.classList.contains("min") ? 0 : 1,
+    max: el.classList.contains("max") ? 1 : 0,
+  }));
+}
+
+function paperGeometryLoad() {
+  const el = paperPanel();
+  let g = null;
+  try { g = JSON.parse(localStorage.getItem("gedPaper") || "null"); } catch (e) { g = null; }
+  if (!g) return;
+  if (g.max) { el.classList.add("max"); return; }
+  const w = Math.min(g.width || 470, window.innerWidth - 20);
+  const h = Math.min(g.height || 430, window.innerHeight - 20);
+  const left = Math.max(10, Math.min(window.innerWidth - 120, g.left || 0));
+  const top = Math.max(10, Math.min(window.innerHeight - 60, g.top || 0));
+  el.style.left = left + "px";
+  el.style.top = top + "px";
+  el.style.right = "auto";
+  el.style.bottom = "auto";
+  el.style.width = w + "px";
+  el.style.height = h + "px";
+  if (!g.min) el.classList.add("min");
 }
 
 function showNotes() {
-  $("#home").classList.add("hidden");
-  $("#test").classList.add("hidden");
-  $("#summary").classList.add("hidden");
-  $("#notes").classList.remove("hidden");
-  loadNotes();
+  const el = paperPanel();
+  el.classList.remove("hidden");
+  paperGeometryLoad();
+  loadPaper();
 }
 
-async function loadNotes() {
-  const box = $("#notelist");
-  box.innerHTML = '<p class="muted">Loading…</p>';
-  let rows = [];
+async function loadPaper() {
+  let doc = { text: "", by: "" };
   try {
-    rows = (await api("/api/notes")).notes || [];
+    doc = await api("/api/paper");
   } catch (e) {
-    box.innerHTML = '<p class="muted">Cheat sheet unavailable.</p>';
-    return;
+    $("#paperstatus").textContent = "offline";
   }
-  if (!rows.length) {
-    box.innerHTML = '<p class="muted">No notes yet. Save one above, or ask Jarvis to add one while you work.</p>';
-    return;
+  if (!paperDirty) {
+    $("#paper").value = doc.text || "";
+    $("#paperstatus").textContent = doc.updated
+      ? `${doc.by || "you"} · ${new Date(doc.updated * 1000).toLocaleTimeString()}`
+      : "empty";
   }
-  box.innerHTML = rows.map((n) => `
-    <article class="note" data-id="${esc(n.id)}">
-      <header>
-        <strong>${esc(n.title || "Note")}</strong>
-        <span class="pill tiny ${n.updated_by === "jarvis" ? "jv" : ""}">${n.updated_by === "jarvis" ? "Jarvis" : "you"}</span>
-        ${n.subject ? `<span class="pill tiny">${esc(n.subject)}</span>` : ""}
-        <span class="note-actions">
-          <button type="button" class="ghost tiny" data-edit="${esc(n.id)}">Edit</button>
-          <button type="button" class="ghost tiny" data-del="${esc(n.id)}">Delete</button>
-        </span>
-      </header>
-      <div class="note-body">${esc(n.body).replace(/\n/g, "<br>")}</div>
-    </article>`).join("");
-  box.querySelectorAll("[data-edit]").forEach((b) => {
-    b.onclick = () => {
-      const n = rows.find((r) => r.id === b.dataset.edit);
-      if (!n) return;
-      editingNote = n.id;
-      $("#notetitle").value = n.title || "";
-      $("#notesubject").value = n.subject || "";
-      $("#notebody").value = n.body || "";
-      $("#notestatus").textContent = "editing — save to replace";
-      $("#notebody").focus();
-    };
-  });
-  box.querySelectorAll("[data-del]").forEach((b) => {
-    b.onclick = async () => {
-      await api("/api/notes", { id: b.dataset.del, delete: true });
-      if (editingNote === b.dataset.del) clearNoteForm();
-      loadNotes();
-    };
-  });
 }
 
-function clearNoteForm() {
-  editingNote = null;
-  $("#notetitle").value = "";
-  $("#notesubject").value = "";
-  $("#notebody").value = "";
-  $("#notestatus").textContent = "";
+async function savePaper(by) {
+  paperDirty = false;
+  $("#paperstatus").textContent = "saving…";
+  try {
+    await api("/api/paper", { text: $("#paper").value, by: by || "student" });
+    $("#paperstatus").textContent = "saved";
+  } catch (e) {
+    $("#paperstatus").textContent = "not saved";
+    paperDirty = true;
+  }
 }
+
+/* drag by the bar - window-level listeners, so it works whether or not the
+   browser grants pointer capture (and cannot get stuck mid-drag) */
+(function paperDrag() {
+  const bar = $("#paperbar");
+  const el = paperPanel();
+  let dx = 0, dy = 0, dragging = false;
+
+  function move(e) {
+    if (!dragging) return;
+    const w = el.getBoundingClientRect().width;
+    const x = Math.max(-w + 90, Math.min(window.innerWidth - 60, e.clientX - dx));
+    const y = Math.max(0, Math.min(window.innerHeight - 38, e.clientY - dy));
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    e.preventDefault();
+  }
+  function up() {
+    if (!dragging) return;
+    dragging = false;
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+    paperGeometrySave();
+  }
+  bar.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button")) return;
+    const r = el.getBoundingClientRect();
+    dx = e.clientX - r.left;
+    dy = e.clientY - r.top;
+    dragging = true;
+    el.classList.remove("max");
+    el.style.left = r.left + "px";
+    el.style.top = r.top + "px";
+    el.style.right = "auto";
+    el.style.bottom = "auto";
+    el.style.width = r.width + "px";
+    el.style.height = r.height + "px";
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    e.preventDefault();
+  });
+})();
+
+$("#paper-min").onclick = () => {
+  const el = paperPanel();
+  el.classList.toggle("min");
+  el.classList.remove("max");
+  paperGeometrySave();
+};
+$("#paper-max").onclick = () => {
+  const el = paperPanel();
+  el.classList.toggle("max");
+  el.classList.remove("min");
+  paperGeometrySave();
+};
+$("#paper-close").onclick = () => {
+  paperPanel().classList.add("hidden");
+  paperGeometrySave();
+};
 
 $("#btn-notes").onclick = showNotes;
-$("#noteclear").onclick = clearNoteForm;
-$("#noteform").onsubmit = async (e) => {
-  e.preventDefault();
-  const title = $("#notetitle").value.trim();
-  const body = $("#notebody").value.trim();
-  if (!title && !body) { $("#notestatus").textContent = "write something first"; return; }
-  $("#notestatus").textContent = "saving…";
-  try {
-    await api("/api/notes", { id: editingNote || undefined, title, body,
-                              subject: $("#notesubject").value.trim(), by: "student" });
-    $("#notestatus").textContent = "saved";
-    clearNoteForm();
-    loadNotes();
-  } catch (err) {
-    $("#notestatus").textContent = "could not save";
-  }
-};$("#btn-check").onclick = check;
+$("#paper").addEventListener("input", () => {
+  paperDirty = true;
+  $("#paperstatus").textContent = "unsaved…";
+  clearTimeout(paperTimer);
+  paperTimer = setTimeout(() => savePaper("student"), 900);
+});
+$("#paper").addEventListener("blur", () => { if (paperDirty) savePaper("student"); });
+("#btn-check").onclick = check;
 $("#btn-hint").onclick = () => askTutor("hint", "Give me a hint for this one.");
 $("#btn-why").onclick = () => askTutor("why", "Why is that the answer?");
 $("#btn-prev").onclick = () => { if (state.i > 0) { state.i--; render(); } };
