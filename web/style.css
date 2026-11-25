@@ -104,6 +104,8 @@ textarea{min-height:110px;resize:vertical}
 
 /* working indicator */
 .msg.typing{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:14px}
+.msg.typing.warn .verb{color:#e8a13a}
+.msg.typing.warn .dots i{background:#e8a13a;animation:none;opacity:.5}
 .msg.typing .verb{color:#cfdaea}
 .msg.typing .dots{display:inline-flex;gap:4px}
 .msg.typing .dots i{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.35;animation:blip 1.2s infinite}
@@ -142,3 +144,18 @@ textarea{min-height:110px;resize:vertical}
 .card-sub.mega{border-color:#7c5cff;background:linear-gradient(180deg,#1b1738,#121022)}
 .card-sub .resume{display:block;margin-top:8px;font-size:12px;color:var(--good)}
 .mention-head{font-size:11.5px;color:#6f819c;padding:7px 12px;border-bottom:1px solid var(--line);letter-spacing:.3px}
+
+/* scoreboard + question history */
+.board{margin:34px auto 0;max-width:900px}
+.board-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.board-head h2{font-size:16px;margin:0;color:var(--ink,#e8eefc)}
+.tables{display:grid;gap:14px}
+.table{width:100%;border-collapse:collapse;font-size:12.5px;background:#121a2a;border:1px solid var(--line,#26334a);border-radius:10px;overflow:hidden}
+.table th{text-align:left;font-weight:600;color:#8ea3c4;padding:8px 10px;border-bottom:1px solid var(--line,#26334a);white-space:nowrap}
+.table td{padding:8px 10px;border-bottom:1px solid rgba(38,51,74,.55);color:#dbe6fb;vertical-align:top}
+.table tr:last-child td{border-bottom:none}
+.table td.ok{color:#4ade80}
+.table td.no{color:#f2695c}
+.table td.muted{color:#6f819c}
+.table td.q{max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:640px){.table{font-size:11.5px}.table td.q{max-width:180px}}
