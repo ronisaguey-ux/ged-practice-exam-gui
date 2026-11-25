@@ -55,21 +55,16 @@
 
 </main>
 
-<main id="notes" class="home hidden">
-  <h1>Cheat sheet</h1>
-  <p class="sub">Your notes and the ones Jarvis writes when it teaches you something worth keeping. Edit anything here, or ask Jarvis in the chat to add or fix a note.</p>
-  <form id="noteform" class="noteform">
-    <input id="notetitle" type="text" placeholder="Title — e.g. Slope from two points" maxlength="200">
-    <input id="notesubject" type="text" placeholder="Subject (optional): math, rla, science, social_studies" maxlength="40">
-    <textarea id="notebody" placeholder="The note itself. Anything you want to remember." rows="4"></textarea>
-    <div class="noteform-actions">
-      <button class="primary" type="submit" id="notesave">Save note</button>
-      <button class="ghost" type="button" id="noteclear">Clear</button>
-      <span id="notestatus" class="muted"></span>
-    </div>
-  </form>
-  <div id="notelist" class="notes"></div>
-</main>
+<section id="notes" class="sheetwrap hidden">
+  <header id="paperbar" class="paperbar">
+    <span class="papertitle">Cheat sheet</span>
+    <span id="paperstatus" class="paperstat">saved</span>
+    <button type="button" class="paperbtn" id="paper-min" title="Minimize">–</button>
+    <button type="button" class="paperbtn" id="paper-max" title="Expand">□</button>
+    <button type="button" class="paperbtn" id="paper-close" title="Close">×</button>
+  </header>
+  <textarea id="paper" class="paper" spellcheck="true" placeholder="Type here. Anything — formulas, rules, traps you keep missing. Jarvis can write on it too."></textarea>
+</section>
 
 <main id="test" class="test hidden">
   <section class="left">
