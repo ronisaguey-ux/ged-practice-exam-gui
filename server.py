@@ -267,6 +267,35 @@ def write_paper(text: str, by: str = "student") -> dict:
     return doc
 
 
+CONTROL = DATA / "control.jsonl"
+
+
+def push_control(action: str, payload: dict | None = None, by: str = "jarvis") -> dict:
+    """Queue a command for the open page. The page polls this file; it is the only
+    way the tutor can drive the GUI (switch view, jump to a question, print a line)."""
+    entry = {"id": time.time_ns(), "action": str(action)[:40], "payload": payload or {},
+             "by": str(by)[:20], "ts": round(time.time(), 3)}
+    with CONTROL.open("a") as fh:
+        fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    return entry
+
+
+def read_control(since: int = 0, limit: int = 50) -> dict:
+    rows = []
+    if CONTROL.exists():
+        for line in CONTROL.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                rec = json.loads(line)
+            except Exception:
+                continue
+            if int(rec.get("id") or 0) > since:
+                rows.append(rec)
+    rows = rows[-limit:]
+    return {"commands": rows, "last": rows[-1]["id"] if rows else since}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "GED/1.0"
 
@@ -380,6 +409,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"error": "no session"}, 404)
                 return
             self._json(json.loads(f.read_text()))
+            return
+        if path == "/api/control":
+            since = 0
+            for part in query.split("&"):
+                if part.startswith("since="):
+                    try:
+                        since = int(part.split("=", 1)[1])
+                    except ValueError:
+                        since = 0
+            self._json(read_control(since))
             return
         if path == "/api/paper":
             self._json(read_paper())
@@ -499,6 +538,16 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"request_id": rid})
             return
 
+        if path == "/api/control":
+            since = 0
+            for part in query.split("&"):
+                if part.startswith("since="):
+                    try:
+                        since = int(part.split("=", 1)[1])
+                    except ValueError:
+                        since = 0
+            self._json(read_control(since))
+            return
         if path == "/api/paper":
             text = body.get("text")
             if text is None:

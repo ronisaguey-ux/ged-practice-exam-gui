@@ -177,6 +177,35 @@ TOOLS = [
     },
     *CALC.TOOLS,
     {
+        "name": "ui_state",
+        "description": ("What the student's screen is showing right now: subject, question number and "
+                        "total, the question itself with its options, the live score/points/streak, how "
+                        "many requests are waiting, and whether the cheat sheet has text."),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "ui_command",
+        "description": ("Drive the GUI. action=view (payload {view: home|test|sheet}), action=start "
+                        "(payload {subject}), action=goto (payload {id} - opens that question), "
+                        "action=say (payload {text} - prints a line in the chat), action=reload_bank "
+                        "(the page picks up your question edits), action=next / action=prev, "
+                        "action=refresh (re-read the scoreboard). The open page executes it within "
+                        "about three seconds."),
+        "inputSchema": {"type": "object", "properties": {
+            "action": {"type": "string"},
+            "payload": {"type": "object"}},
+            "required": ["action"]},
+    },
+    {
+        "name": "alert_gideon",
+        "description": ("Wake Gideon, the owner's assistant, with a message. Use it when something is "
+                        "broken in a way you cannot fix with your own tools (the app fails to load, a "
+                        "tool of yours errors, the bank will not save) or when the owner needs a "
+                        "decision. Say what is broken, what you tried, and what you need."),
+        "inputSchema": {"type": "object", "properties": {
+            "message": {"type": "string"}}, "required": ["message"]},
+    },
+    {
         "name": "read_paper",
         "description": ("The student's cheat sheet - one plain sheet of paper that you and the student "
                         "both write on. Call it before writing so you extend what is there instead of "
@@ -680,6 +709,66 @@ def call(name: str, args: dict) -> dict:
 
     if name in {t["name"] for t in CALC.TOOLS}:
         return text_result(CALC.call(name, args))
+
+    if name == "ui_state":
+        live = {}
+        snap = DATA / "session.json"
+        if snap.exists():
+            try:
+                live = json.loads(snap.read_text())
+            except Exception:
+                live = {}
+        prog = live.get("progress") or {}
+        subj = prog.get("subject") or ""
+        qid = live.get("question_id") or ""
+        q = next((x for x in read_bank()["questions"] if x["id"] == qid), None)
+        waiting = len([f for f in REQ.glob("*.json") if not (REP / f.name).exists()]) if REQ.exists() else 0
+        return text_result(json.dumps({
+            "subject": subj, "subject_name": prog.get("subject_name"),
+            "index": prog.get("index"), "total": prog.get("total"),
+            "score": prog.get("score"), "asked": prog.get("asked"),
+            "points": prog.get("points"), "streak": prog.get("streak"),
+            "question": q, "pending_requests": waiting,
+            "cheat_sheet_chars": len(_read_paper()["text"]),
+        }, indent=1, ensure_ascii=False)[:4000])
+
+    if name == "ui_command":
+        action = str(args.get("action") or "").strip()
+        if not action:
+            return text_result("action is required")
+        payload = args.get("payload") or {}
+        CONTROL = DATA / "control.jsonl"
+        entry = {"id": time.time_ns(), "action": action[:40], "payload": payload,
+                 "by": "jarvis", "ts": round(time.time(), 3)}
+        with CONTROL.open("a") as fh:
+            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        return text_result(f"queued {action}; the page picks it up within a few seconds")
+
+    if name == "alert_gideon":
+        text = str(args.get("message") or "").strip()
+        if not text:
+            return text_result("message is required")
+        pin = Path.home() / ".local/state/opencode/openbot_session"
+        try:
+            sid = pin.read_text().strip().splitlines()[0].strip()
+        except Exception:
+            return text_result("no Gideon session pin found - could not send")
+        wake = ("GED TUTOR ALERT - Jarvis, the GED tutor, is blocked and needs you now.\n\n"
+                + text
+                + "\n\nFix it, then tell the owner on tele in one line what was broken "
+                  "and what you changed. The app is http://127.0.0.1:8765 (config in "
+                  "~/.config/ged-tutor, MCP tools are ged_*).")
+        try:
+            import subprocess
+            # same injection the cron wakes use: oc_send --async, session from the pin file
+            r = subprocess.run([str(Path.home() / ".local/bin/oc_send"), wake,
+                                "--session", sid, "--async"],
+                               capture_output=True, text=True, timeout=25)
+            ok = r.returncode == 0
+            return text_result(f"sent to Gideon ({sid}): {'ok' if ok else 'failed'}"
+                               + (f" {r.stderr.strip()[:120]}" if not ok else ""))
+        except Exception as exc:  # noqa: BLE001
+            return text_result(f"could not wake Gideon: {exc}")
 
     if name == "read_paper":
         doc = _read_paper()
