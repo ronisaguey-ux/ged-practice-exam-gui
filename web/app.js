@@ -809,7 +809,7 @@ $("#paper").addEventListener("input", () => {
   paperTimer = setTimeout(() => savePaper("student"), 900);
 });
 $("#paper").addEventListener("blur", () => { if (paperDirty) savePaper("student"); });
-("#btn-check").onclick = check;
+$("#btn-check").onclick = check;
 $("#btn-hint").onclick = () => askTutor("hint", "Give me a hint for this one.");
 $("#btn-why").onclick = () => askTutor("why", "Why is that the answer?");
 $("#btn-prev").onclick = () => { if (state.i > 0) { state.i--; render(); } };
@@ -892,13 +892,46 @@ $("#chatinput").addEventListener("keydown", (e) => {
   }
 });
 
+/* chat queue: you can type and send while Jarvis is still answering. Messages
+   go out one at a time, in the order you sent them. */
+const chatQueue = [];
+let chatBusy = false;
+
+function paintQueue() {
+  const badge = $("#queued");
+  if (!badge) return;
+  badge.textContent = chatQueue.length ? `${chatQueue.length} queued` : "";
+  badge.classList.toggle("hidden", !chatQueue.length);
+}
+
+async function pumpChat() {
+  if (chatBusy) return;
+  chatBusy = true;
+  while (chatQueue.length) {
+    const text = chatQueue.shift();
+    paintQueue();
+    try {
+      await askTutor("chat", text);
+    } catch (err) {
+      addMsg("bot", "That message did not go through. Send it again and I will retry.");
+    }
+  }
+  chatBusy = false;
+  paintQueue();
+}
+
 $("#chatform").onsubmit = (e) => {
   e.preventDefault();
-  const v = $("#chatinput").value.trim();
+  const input = $("#chatinput");
+  const v = input.value.trim();
   if (!v && !state.focusId) return;
-  $("#chatinput").value = "";
+  const text = v || "Tell me about the question I pointed at.";
+  input.value = "";
   closeMention();
-  askTutor("chat", v || "Tell me about the question I pointed at.");
+  input.focus();            // stay in the box: keep typing the next one
+  chatQueue.push(text);
+  paintQueue();
+  pumpChat();
 };
 
 function finish() {
