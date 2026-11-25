@@ -744,7 +744,17 @@ function pickMention(id) {
 }
 
 /* ---------------------------------------------------------------- events */
-$("#btn-home").onclick = () => { $("#test").classList.add("hidden"); $("#home").classList.remove("hidden"); };
+$("#btn-home").onclick = () => {
+  // leaving the quiz on purpose: update the saved view first, or the next boot
+  // (bank change, control command, refresh) would drag you back into the run
+  state.subject = "";
+  $("#test").classList.add("hidden");
+  $("#notes").classList.add("hidden");
+  $("#summary").classList.add("hidden");
+  $("#home").classList.remove("hidden");
+  saveView();
+  boot();
+};
 $("#btn-tutor").onclick = () => $("#tutor").scrollIntoView({ behavior: "smooth" });
 
 /* the tutor edits the bank while you work: notice the file changing and pull it
@@ -806,7 +816,7 @@ function runControl(c) {
   switch (c.action) {
     case "view":
       if (p.view === "sheet") showNotes();
-      else if (p.view === "home") { $("#test").classList.add("hidden"); $("#notes").classList.add("hidden"); $("#home").classList.remove("hidden"); boot(); }
+      else if (p.view === "home") { state.subject = ""; $("#test").classList.add("hidden"); $("#notes").classList.add("hidden"); $("#home").classList.remove("hidden"); saveView(); boot(); }
       else if (p.view === "test") { $("#notes").classList.add("hidden"); $("#home").classList.add("hidden"); $("#test").classList.remove("hidden"); }
       break;
     case "start":
