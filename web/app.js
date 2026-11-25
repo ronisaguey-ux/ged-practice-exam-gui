@@ -615,7 +615,97 @@ function pickMention(id) {
 /* ---------------------------------------------------------------- events */
 $("#btn-home").onclick = () => { $("#test").classList.add("hidden"); $("#home").classList.remove("hidden"); };
 $("#btn-tutor").onclick = () => $("#tutor").scrollIntoView({ behavior: "smooth" });
-$("#btn-check").onclick = check;
+
+/* ---------------------------------------------------------------- cheat sheet */
+let editingNote = null;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function showNotes() {
+  $("#home").classList.add("hidden");
+  $("#test").classList.add("hidden");
+  $("#summary").classList.add("hidden");
+  $("#notes").classList.remove("hidden");
+  loadNotes();
+}
+
+async function loadNotes() {
+  const box = $("#notelist");
+  box.innerHTML = '<p class="muted">Loading…</p>';
+  let rows = [];
+  try {
+    rows = (await api("/api/notes")).notes || [];
+  } catch (e) {
+    box.innerHTML = '<p class="muted">Cheat sheet unavailable.</p>';
+    return;
+  }
+  if (!rows.length) {
+    box.innerHTML = '<p class="muted">No notes yet. Save one above, or ask Jarvis to add one while you work.</p>';
+    return;
+  }
+  box.innerHTML = rows.map((n) => `
+    <article class="note" data-id="${esc(n.id)}">
+      <header>
+        <strong>${esc(n.title || "Note")}</strong>
+        <span class="pill tiny ${n.updated_by === "jarvis" ? "jv" : ""}">${n.updated_by === "jarvis" ? "Jarvis" : "you"}</span>
+        ${n.subject ? `<span class="pill tiny">${esc(n.subject)}</span>` : ""}
+        <span class="note-actions">
+          <button type="button" class="ghost tiny" data-edit="${esc(n.id)}">Edit</button>
+          <button type="button" class="ghost tiny" data-del="${esc(n.id)}">Delete</button>
+        </span>
+      </header>
+      <div class="note-body">${esc(n.body).replace(/\n/g, "<br>")}</div>
+    </article>`).join("");
+  box.querySelectorAll("[data-edit]").forEach((b) => {
+    b.onclick = () => {
+      const n = rows.find((r) => r.id === b.dataset.edit);
+      if (!n) return;
+      editingNote = n.id;
+      $("#notetitle").value = n.title || "";
+      $("#notesubject").value = n.subject || "";
+      $("#notebody").value = n.body || "";
+      $("#notestatus").textContent = "editing — save to replace";
+      $("#notebody").focus();
+    };
+  });
+  box.querySelectorAll("[data-del]").forEach((b) => {
+    b.onclick = async () => {
+      await api("/api/notes", { id: b.dataset.del, delete: true });
+      if (editingNote === b.dataset.del) clearNoteForm();
+      loadNotes();
+    };
+  });
+}
+
+function clearNoteForm() {
+  editingNote = null;
+  $("#notetitle").value = "";
+  $("#notesubject").value = "";
+  $("#notebody").value = "";
+  $("#notestatus").textContent = "";
+}
+
+$("#btn-notes").onclick = showNotes;
+$("#noteclear").onclick = clearNoteForm;
+$("#noteform").onsubmit = async (e) => {
+  e.preventDefault();
+  const title = $("#notetitle").value.trim();
+  const body = $("#notebody").value.trim();
+  if (!title && !body) { $("#notestatus").textContent = "write something first"; return; }
+  $("#notestatus").textContent = "saving…";
+  try {
+    await api("/api/notes", { id: editingNote || undefined, title, body,
+                              subject: $("#notesubject").value.trim(), by: "student" });
+    $("#notestatus").textContent = "saved";
+    clearNoteForm();
+    loadNotes();
+  } catch (err) {
+    $("#notestatus").textContent = "could not save";
+  }
+};$("#btn-check").onclick = check;
 $("#btn-hint").onclick = () => askTutor("hint", "Give me a hint for this one.");
 $("#btn-why").onclick = () => askTutor("why", "Why is that the answer?");
 $("#btn-prev").onclick = () => { if (state.i > 0) { state.i--; render(); } };
