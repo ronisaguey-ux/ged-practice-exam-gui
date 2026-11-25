@@ -691,6 +691,39 @@ function pickMention(id) {
 $("#btn-home").onclick = () => { $("#test").classList.add("hidden"); $("#home").classList.remove("hidden"); };
 $("#btn-tutor").onclick = () => $("#tutor").scrollIntoView({ behavior: "smooth" });
 
+/* the tutor edits the bank while you work: notice the file changing and pull it
+   in, keeping your place (the run is matched by question id, not index) */
+let bankMTime = 0;
+
+async function watchBank() {
+  if (!state.bank || state.offline) return;
+  try {
+    const v = await api("/api/bank_version");
+    if (!v || !v.mtime) return;
+    if (!bankMTime) { bankMTime = v.mtime; return; }
+    if (v.mtime === bankMTime) return;
+    bankMTime = v.mtime;
+    const fresh = await api("/api/questions");
+    if (!fresh || !fresh.questions) return;
+    state.bank = fresh;
+    if (!$("#test").classList.contains("hidden") && state.questions.length) {
+      const current = state.questions[state.i] && state.questions[state.i].id;
+      const byId = new Map(fresh.questions.map((q) => [q.id, q]));
+      state.questions = state.questions.map((q) => byId.get(q.id) || q);
+      if (current) {
+        const at = state.questions.findIndex((q) => q.id === current);
+        if (at >= 0) state.i = at;
+      }
+      render();
+      showFeedback("Question bank updated", "Jarvis changed a question you are looking at.", null, true);
+    } else {
+      boot();
+    }
+  } catch (e) { /* offline: next tick */ }
+}
+
+setInterval(watchBank, 7000);
+
 /* ------------------------------------------------------------ tutor control
    Jarvis can drive the page: switch view, open a question, print a line, reload
    the bank. It queues commands in data/control.jsonl; we poll and execute. */
