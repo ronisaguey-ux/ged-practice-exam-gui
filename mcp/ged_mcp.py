@@ -168,6 +168,37 @@ TOOLS = [
             "seed": {"type": "integer"}, "keep_sets": {"type": "boolean"},
             "reason": {"type": "string"}}},
     },
+    {
+        "name": "list_notes",
+        "description": ("The student's cheat sheet: every note with its id, title, subject and body "
+                        "(newest first). Read it before writing a note so you edit instead of duplicate."),
+        "inputSchema": {"type": "object", "properties": {
+            "subject": {"type": "string"}, "limit": {"type": "integer"}}},
+    },
+    {
+        "name": "add_note",
+        "description": ("Add a note to the cheat sheet the student sees in the Cheat sheet tab. Use it "
+                        "when you teach something worth keeping — a formula, a rule, a trap you just "
+                        "explained. Short title, 1-6 lines of body, and the subject it belongs to. "
+                        "Written notes are labelled as yours."),
+        "inputSchema": {"type": "object", "properties": {
+            "title": {"type": "string"}, "body": {"type": "string"},
+            "subject": {"type": "string"}}, "required": ["title", "body"]},
+    },
+    {
+        "name": "edit_note",
+        "description": ("Change an existing cheat-sheet note by id: title, body or subject. Use it to "
+                        "correct a note that is wrong or to fold a new insight into the one already there."),
+        "inputSchema": {"type": "object", "properties": {
+            "id": {"type": "string"}, "title": {"type": "string"},
+            "body": {"type": "string"}, "subject": {"type": "string"}}, "required": ["id"]},
+    },
+    {
+        "name": "delete_note",
+        "description": "Remove a cheat-sheet note by id, when it is wrong or superseded.",
+        "inputSchema": {"type": "object", "properties": {"id": {"type": "string"}},
+                        "required": ["id"]},
+    },
 ]
 
 
@@ -247,6 +278,59 @@ def _apply_points(subject: str | None, delta: int, reason: str, streak: int | No
     with LEDGER.open("a") as fh:
         fh.write(json.dumps(entry) + "\n")
     return entry
+
+
+NOTES = DATA / "notes.json"
+
+
+def _read_notes() -> list[dict]:
+    if not NOTES.exists():
+        return []
+    try:
+        raw = json.loads(NOTES.read_text())
+    except Exception:
+        return []
+    rows = raw.get("notes") if isinstance(raw, dict) else raw
+    return rows if isinstance(rows, list) else []
+
+
+def _write_notes(rows: list[dict]) -> None:
+    NOTES.write_text(json.dumps({"notes": rows}, indent=1, ensure_ascii=False))
+
+
+def _upsert_note(body: dict) -> dict:
+    """Same store the GUI writes (data/notes.json): an existing id is edited in
+    place, anything else is appended, and every write records who did it."""
+    rows = _read_notes()
+    nid = str(body.get("id") or "").strip()
+    now = time.time()
+    for row in rows:
+        if nid and row.get("id") == nid:
+            for k in ("title", "body", "subject"):
+                if body.get(k) is not None:
+                    row[k] = str(body[k])[:6000]
+            row["updated"] = round(now, 3)
+            row["updated_by"] = str(body.get("by") or "jarvis")[:20]
+            _write_notes(rows)
+            return row
+    row = {"id": nid or ("n" + __import__("uuid").uuid4().hex[:8]),
+           "title": str(body.get("title") or "Note")[:200],
+           "body": str(body.get("body") or "")[:6000],
+           "subject": str(body.get("subject") or "")[:40],
+           "created": round(now, 3), "updated": round(now, 3),
+           "updated_by": str(body.get("by") or "jarvis")[:20]}
+    rows.append(row)
+    _write_notes(rows)
+    return row
+
+
+def _delete_note(nid: str) -> bool:
+    rows = _read_notes()
+    keep = [r for r in rows if r.get("id") != nid]
+    if len(keep) == len(rows):
+        return False
+    _write_notes(keep)
+    return True
 
 
 def _read_progress(subject: str | None) -> dict:
@@ -569,6 +653,43 @@ def call(name: str, args: dict) -> dict:
         return text_result(json.dumps({"shuffled": len(new_sel),
                                        "first": [q["id"] for q in new_sel[:10]],
                                        "you_can_repeat_with_seed": seed}, indent=1))
+
+    if name == "list_notes":
+        rows = _read_notes()
+        subj = str(args.get("subject") or "")
+        if subj:
+            rows = [r for r in rows if (r.get("subject") or "") == subj]
+        rows.sort(key=lambda r: float(r.get("updated") or 0), reverse=True)
+        limit = int(args.get("limit") or 50)
+        return text_result(json.dumps(rows[:limit], indent=1, ensure_ascii=False) if rows
+                           else "the cheat sheet is empty")
+
+    if name == "add_note":
+        title = str(args.get("title") or "").strip()
+        body = str(args.get("body") or "").strip()
+        if not title or not body:
+            return text_result("both title and body are required")
+        row = _upsert_note({"title": title, "body": body,
+                            "subject": args.get("subject"), "by": "jarvis"})
+        return text_result(json.dumps(row, indent=1, ensure_ascii=False))
+
+    if name == "edit_note":
+        nid = str(args.get("id") or "").strip()
+        if not nid:
+            return text_result("id is required")
+        patch = {k: args[k] for k in ("title", "body", "subject") if args.get(k) is not None}
+        if not patch:
+            return text_result("nothing to change: give title, body or subject")
+        patch["id"] = nid
+        patch["by"] = "jarvis"
+        row = _upsert_note(patch)
+        if row.get("id") != nid:
+            return text_result(f"no note {nid}")
+        return text_result(json.dumps(row, indent=1, ensure_ascii=False))
+
+    if name == "delete_note":
+        nid = str(args.get("id") or "").strip()
+        return text_result("deleted" if _delete_note(nid) else f"no note {nid}")
 
     raise KeyError(name)
 
