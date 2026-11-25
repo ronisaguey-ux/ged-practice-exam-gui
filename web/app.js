@@ -113,10 +113,64 @@ function saveSession() {
   }).catch(() => {});
 }
 
+document.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "btn-board") loadBoard();
+});
+
 function paintScore() {
   $("#points").textContent = `${state.points} pts`;
   $("#streak").textContent = `streak ${state.streak}`;
   $("#score").textContent = `${state.score} / ${state.asked}`;
+}
+
+
+/* ---------------------------------------------------------- scoreboard */
+const SUBJECT_ORDER = ["math", "rla", "science", "social"];
+
+function when(ts) {
+  if (!ts) return "";
+  const d = new Date(ts * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  const today = new Date();
+  const same = d.toDateString() === today.toDateString();
+  return same ? `${pad(d.getHours())}:${pad(d.getMinutes())}`
+              : `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+}
+
+function esc(v) {
+  return String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+async function loadBoard() {
+  const score = $("#scoretable tbody");
+  const hist = $("#historytable tbody");
+  if (!score || !hist) return;
+  try {
+    const [board, history] = await Promise.all([api("/api/scoreboard"), api("/api/history?limit=40")]);
+    const rows = Object.entries(board.subjects || {}).sort((a, b) => {
+      const ia = SUBJECT_ORDER.indexOf(a[0]), ib = SUBJECT_ORDER.indexOf(b[0]);
+      return (ia < 0 ? 9 : ia) - (ib < 0 ? 9 : ib);
+    });
+    score.innerHTML = rows.length
+      ? rows.map(([subj, s]) => `<tr><td>${esc(s.name || subj)}</td><td>${s.asked}</td><td>${s.correct}</td>` +
+          `<td class="${s.accuracy >= 70 ? "ok" : s.asked && s.accuracy < 50 ? "no" : ""}">${s.accuracy}%</td>` +
+          `<td>${s.points}</td><td>${s.best_streak}</td></tr>`).join("")
+      : '<tr><td colspan="6" class="muted">No attempts yet.</td></tr>';
+
+    const hrows = (history.rows || []).slice(0, 40);
+    hist.innerHTML = hrows.length
+      ? hrows.map((r) => {
+          const badge = r.correct === true ? '<td class="ok">correct</td>'
+            : r.correct === false ? '<td class="no">wrong</td>' : '<td class="muted">ungraded</td>';
+          return `<tr><td>${when(r.ts)}</td><td>${esc(r.subject || "")}</td>` +
+                 `<td class="q" title="${esc(r.prompt || "")}">${esc(r.prompt || r.id || "")}</td>` +
+                 `<td class="q" title="${esc(r.given || "")}">${esc(r.given || "")}</td>${badge}</tr>`;
+        }).join("")
+      : '<tr><td colspan="5" class="muted">Nothing answered yet.</td></tr>';
+  } catch (e) {
+    score.innerHTML = '<tr><td colspan="6" class="muted">Scoreboard unavailable.</td></tr>';
+    hist.innerHTML = '<tr><td colspan="5" class="muted">History unavailable.</td></tr>';
+  }
 }
 
 /* ---------------------------------------------------------------- home */
@@ -152,6 +206,7 @@ async function boot() {
   const box = $("#subjects");
   box.innerHTML = "";
   let sessions = {};
+  loadBoard();
   try { sessions = await api("/api/sessions"); } catch (e) { sessions = {}; }
 
   const cards = Object.entries(state.bank.subjects).map(([k, m]) => ({
@@ -397,6 +452,7 @@ async function check() {
   }
   const title = (res.correct ? "Correct" : `Not quite — answer: ${res.expected}`) + (delta ? `  (${delta})` : "");
   showFeedback(title, res.explanation || "", res.correct);
+  loadBoard();
 }
 
 function showFeedback(title, body, correct, neutral) {
@@ -408,14 +464,30 @@ function showFeedback(title, body, correct, neutral) {
 
 /* ---------------------------------------------------------------- tutor */
 
-/* --- working indicator ------------------------------------------------- */
-const VERBS = {
-  hint: ["thinking", "rereading the question", "looking for a nudge", "checking the key"],
-  why: ["thinking", "checking the reasoning", "comparing the options", "reading the passage"],
-  grade: ["reading your answer", "checking it against the guide", "scoring", "writing feedback"],
-  chat: ["thinking", "checking the bank", "searching the web", "writing a reply"],
+/* --- working indicator -------------------------------------------------
+   Every word here describes something that is actually happening. The line
+   has three honest phases and nothing else:
+     sending  - the POST to /api/help is in flight
+     queued   - the request file exists and Jarvis has not answered yet
+                (verb says how long Jarvis has had it; timeouts are reported,
+                 not hidden behind an endlessly rotating verb)
+     failed   - the server said timeout, or the tutor has been silent for
+                longer than the request age, so the wait is no longer real work
+   There is no verb cycling: a word only changes when the state does.
+   ---------------------------------------------------------------------- */
+const WAIT_TEXT = {
+  sending: "sending to Jarvis",
+  queued: (kind) => (kind === "grade" ? "Jarvis has your answer" : "Jarvis has your question"),
+  stale: "Jarvis is not answering",
 };
 let typingTimer = null;
+
+function paintTyping(verb, secs, warn) {
+  const d = $("#typing");
+  if (!d) return;
+  d.classList.toggle("warn", !!warn);
+  d.innerHTML = `<span class="verb">${verb}</span><span class="dots"><i></i><i></i><i></i></span><span class="secs">${secs}s</span>`;
+}
 
 function showTyping(kind) {
   const log = $("#chatlog");
@@ -423,17 +495,24 @@ function showTyping(kind) {
   d.className = "msg bot typing";
   d.id = "typing";
   log.appendChild(d);
-  const verbs = VERBS[kind] || VERBS.chat;
-  let i = 0;
   const started = Date.now();
-  const paint = () => {
-    const secs = Math.round((Date.now() - started) / 1000);
-    d.innerHTML = `<span class="verb">${verbs[i % verbs.length]}</span><span class="dots"><i></i><i></i><i></i></span><span class="secs">${secs}s</span>`;
-  };
-  paint();
+  paintTyping(WAIT_TEXT.sending, 0, false);
   clearInterval(typingTimer);
-  typingTimer = setInterval(() => { i++; paint(); }, 1800);
+  // the timer only advances the elapsed counter - it never changes the verb
+  typingTimer = setInterval(() => {
+    paintTyping(d.dataset.verb || WAIT_TEXT.sending, Math.round((Date.now() - started) / 1000), d.dataset.warn === "1");
+  }, 1000);
   log.scrollTop = log.scrollHeight;
+  return { started, kind };
+}
+
+function setTypingVerb(el, verb, warn) {
+  const d = $("#typing");
+  if (!d) return;
+  d.dataset.verb = verb;
+  d.dataset.warn = warn ? "1" : "0";
+  const secs = el ? Math.round((Date.now() - el.started) / 1000) : 0;
+  paintTyping(verb, secs, warn);
 }
 
 function hideTyping() {
@@ -443,11 +522,21 @@ function hideTyping() {
   if (el) el.remove();
 }
 
-async function waitReply(id, tries = 60) {
+async function waitReply(id, ctx, tries = 60) {
   for (let k = 0; k < tries; k++) {
     const r = await api(`/api/help/${id}`);
     if (r.status === "done") return r.reply;
-    if (r.status === "timeout") return "";
+    if (r.status === "timeout") {
+      setTypingVerb(ctx, WAIT_TEXT.stale, true);
+      return "";
+    }
+    // Jarvis has had the request long enough that its own 90s promise expired
+    const age = Number(r.age || 0);
+    if (age > 90) {
+      setTypingVerb(ctx, WAIT_TEXT.stale, true);
+      return "";
+    }
+    setTypingVerb(ctx, WAIT_TEXT.queued(ctx && ctx.kind), false);
     await new Promise((res) => setTimeout(res, 1500));
   }
   return "";
@@ -457,12 +546,12 @@ async function askTutor(kind, text) {
   const item = q();
   addMsg("me", text || kind);
   setTutorState("working");
-  showTyping(kind);
+  const wait = showTyping(kind);
   const { request_id } = await api("/api/help", {
     id: item.id, kind, text: text || "", answer: state.answers[item.id] || "",
     context: ctx(), focus_id: state.focusId || null,
   });
-  const reply = await waitReply(request_id);
+  const reply = await waitReply(request_id, wait);
   hideTyping();
   setTutorState("ready");
   addMsg("bot", reply || "No answer from Jarvis yet — try again in a moment.");

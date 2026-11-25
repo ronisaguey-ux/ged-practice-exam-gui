@@ -33,6 +33,7 @@ REP.mkdir(parents=True, exist_ok=True)
 VJOBS = DATA / "variant_jobs.jsonl"
 SESSIONS = DATA / "sessions"
 SESSIONS.mkdir(parents=True, exist_ok=True)
+HISTORY = DATA / "history.jsonl"
 PASSWORD = os.environ.get("GED_PASS", "Mongosged999")
 RATE_LIMIT = int(os.environ.get("GED_RATE", "10"))      # writes per minute
 READ_LIMIT = int(os.environ.get("GED_READ_RATE", "120"))  # reads per minute
@@ -45,6 +46,70 @@ ALLOWED_ORIGINS = {
 
 BANK: dict = {"subjects": {}, "questions": []}
 BY_ID: dict[str, dict] = {}
+
+
+def append_history(record: dict) -> None:
+    """One line per graded attempt. Append-only: a session's counters can be
+    reset, the record of what was actually asked and answered cannot."""
+    line = json.dumps(record, ensure_ascii=False)
+    with LOCK:
+        with HISTORY.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+
+
+def read_history(limit: int = 200) -> list[dict]:
+    if not HISTORY.exists():
+        return []
+    rows: collections.deque[dict] = collections.deque(maxlen=max(1, limit))
+    with HISTORY.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:
+                continue
+    return list(rows)
+
+
+NAMES = {"math": "Mathematical Reasoning", "rla": "Reasoning Through Language Arts",
+         "science": "Science", "social": "Social Studies", "social_studies": "Social Studies",
+         "mega": "Mega (all four)", "unknown": "Other"}
+
+
+def scoreboard() -> dict:
+    """Per-subject totals, from the attempt log plus each session's counters."""
+    totals: dict[str, dict] = {}
+    for row in read_history(100000):
+        subj = row.get("subject") or "unknown"
+        slot = totals.setdefault(subj, {"asked": 0, "correct": 0, "wrong": 0,
+                                        "skipped": 0, "points": 0, "best_streak": 0})
+        slot["asked"] += 1
+        if row.get("correct") is True:
+            slot["correct"] += 1
+        elif row.get("correct") is False:
+            slot["wrong"] += 1
+        else:
+            slot["skipped"] += 1
+    for f in SESSIONS.glob("*.json"):
+        try:
+            d = json.loads(f.read_text())
+        except Exception:
+            continue
+        prog = d.get("progress") or {}
+        subj = prog.get("subject") or d.get("subject") or f.stem
+        slot = totals.setdefault(subj, {"asked": 0, "correct": 0, "wrong": 0,
+                                        "skipped": 0, "points": 0, "best_streak": 0})
+        slot["points"] = max(slot["points"], int(prog.get("points") or 0))
+        slot["best_streak"] = max(slot["best_streak"], int(prog.get("streak") or 0))
+        if prog.get("subject_name"):
+            slot["name"] = prog["subject_name"]
+    for subj, slot in totals.items():
+        slot.setdefault("name", NAMES.get(subj, subj.replace("_", " ").title()))
+        graded = slot["correct"] + slot["wrong"]
+        slot["accuracy"] = round(100.0 * slot["correct"] / graded, 1) if graded else 0.0
+    return totals
 LOCK = threading.Lock()
 BANK_MTIME = 0.0
 
@@ -293,6 +358,33 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self._json(json.loads(f.read_text()))
             return
+        if path == "/api/scoreboard":
+            self._json({"subjects": scoreboard()})
+            return
+        if path == "/api/history":
+            limit = 100
+            for part in query.split("&"):
+                if part.startswith("limit="):
+                    try:
+                        limit = max(1, min(1000, int(part.split("=", 1)[1])))
+                    except ValueError:
+                        pass
+            rows = read_history(limit)
+            out = []
+            for row in reversed(rows):
+                q = BY_ID.get(row.get("id") or "") or {}
+                out.append({
+                    "ts": row.get("ts"),
+                    "id": row.get("id"),
+                    "subject": row.get("subject"),
+                    "type": row.get("type"),
+                    "correct": row.get("correct"),
+                    "given": row.get("given"),
+                    "expected": row.get("expected"),
+                    "prompt": (q.get("prompt") or "")[:160],
+                })
+            self._json({"rows": out})
+            return
         if path == "/api/stats":
             with LOCK:
                 qs = BANK["questions"]
@@ -310,7 +402,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
             req = REQ / f"{rid}.json"
             age = time.time() - (json.loads(req.read_text()).get("created", time.time()) if req.exists() else time.time())
-            self._json({"status": "pending" if age < 90 else "timeout", "reply": ""})
+            self._json({"status": "pending" if age < 90 else "timeout", "reply": "",
+                        "age": round(age, 1)})
             return
 
         # static
@@ -338,7 +431,18 @@ class Handler(BaseHTTPRequestHandler):
             if not q:
                 self._json({"error": "unknown question"}, 404)
                 return
-            correct, expected = grade(q, body.get("answer", ""))
+            given = body.get("answer", "")
+            correct, expected = grade(q, given)
+            append_history({
+                "ts": round(time.time(), 3),
+                "id": q.get("id"),
+                "subject": q.get("subject"),
+                "type": q.get("type"),
+                "skill": q.get("skill") or "",
+                "correct": correct,
+                "given": str(given)[:400],
+                "expected": str(expected)[:400],
+            })
             if correct is not None:
                 queue_variant(q, correct)
             self._json({"correct": correct, "expected": expected,
