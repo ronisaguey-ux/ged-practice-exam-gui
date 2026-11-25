@@ -169,35 +169,22 @@ TOOLS = [
             "reason": {"type": "string"}}},
     },
     {
-        "name": "list_notes",
-        "description": ("The student's cheat sheet: every note with its id, title, subject and body "
-                        "(newest first). Read it before writing a note so you edit instead of duplicate."),
-        "inputSchema": {"type": "object", "properties": {
-            "subject": {"type": "string"}, "limit": {"type": "integer"}}},
+        "name": "read_paper",
+        "description": ("The student's cheat sheet - one plain sheet of paper that you and the student "
+                        "both write on. Call it before writing so you extend what is there instead of "
+                        "wiping it."),
+        "inputSchema": {"type": "object", "properties": {}},
     },
     {
-        "name": "add_note",
-        "description": ("Add a note to the cheat sheet the student sees in the Cheat sheet tab. Use it "
-                        "when you teach something worth keeping — a formula, a rule, a trap you just "
-                        "explained. Short title, 1-6 lines of body, and the subject it belongs to. "
-                        "Written notes are labelled as yours."),
+        "name": "write_paper",
+        "description": ("Write on the cheat sheet. mode=append (default) adds your lines to the end, "
+                        "mode=replace rewrites the whole sheet (only when the student asks you to clean "
+                        "it up or the notes are wrong). Keep it to the few lines worth keeping - a "
+                        "formula, the rule, the trap - not a lecture."),
         "inputSchema": {"type": "object", "properties": {
-            "title": {"type": "string"}, "body": {"type": "string"},
-            "subject": {"type": "string"}}, "required": ["title", "body"]},
-    },
-    {
-        "name": "edit_note",
-        "description": ("Change an existing cheat-sheet note by id: title, body or subject. Use it to "
-                        "correct a note that is wrong or to fold a new insight into the one already there."),
-        "inputSchema": {"type": "object", "properties": {
-            "id": {"type": "string"}, "title": {"type": "string"},
-            "body": {"type": "string"}, "subject": {"type": "string"}}, "required": ["id"]},
-    },
-    {
-        "name": "delete_note",
-        "description": "Remove a cheat-sheet note by id, when it is wrong or superseded.",
-        "inputSchema": {"type": "object", "properties": {"id": {"type": "string"}},
-                        "required": ["id"]},
+            "text": {"type": "string"},
+            "mode": {"type": "string", "enum": ["append", "replace"], "default": "append"}},
+            "required": ["text"]},
     },
 ]
 
@@ -280,57 +267,24 @@ def _apply_points(subject: str | None, delta: int, reason: str, streak: int | No
     return entry
 
 
-NOTES = DATA / "notes.json"
+PAPER = DATA / "paper.json"
 
 
-def _read_notes() -> list[dict]:
-    if not NOTES.exists():
-        return []
+def _read_paper() -> dict:
+    if not PAPER.exists():
+        return {"text": "", "updated": 0, "by": ""}
     try:
-        raw = json.loads(NOTES.read_text())
+        d = json.loads(PAPER.read_text())
     except Exception:
-        return []
-    rows = raw.get("notes") if isinstance(raw, dict) else raw
-    return rows if isinstance(rows, list) else []
+        return {"text": "", "updated": 0, "by": ""}
+    return {"text": str(d.get("text") or ""), "updated": float(d.get("updated") or 0),
+            "by": str(d.get("by") or "")}
 
 
-def _write_notes(rows: list[dict]) -> None:
-    NOTES.write_text(json.dumps({"notes": rows}, indent=1, ensure_ascii=False))
-
-
-def _upsert_note(body: dict) -> dict:
-    """Same store the GUI writes (data/notes.json): an existing id is edited in
-    place, anything else is appended, and every write records who did it."""
-    rows = _read_notes()
-    nid = str(body.get("id") or "").strip()
-    now = time.time()
-    for row in rows:
-        if nid and row.get("id") == nid:
-            for k in ("title", "body", "subject"):
-                if body.get(k) is not None:
-                    row[k] = str(body[k])[:6000]
-            row["updated"] = round(now, 3)
-            row["updated_by"] = str(body.get("by") or "jarvis")[:20]
-            _write_notes(rows)
-            return row
-    row = {"id": nid or ("n" + __import__("uuid").uuid4().hex[:8]),
-           "title": str(body.get("title") or "Note")[:200],
-           "body": str(body.get("body") or "")[:6000],
-           "subject": str(body.get("subject") or "")[:40],
-           "created": round(now, 3), "updated": round(now, 3),
-           "updated_by": str(body.get("by") or "jarvis")[:20]}
-    rows.append(row)
-    _write_notes(rows)
-    return row
-
-
-def _delete_note(nid: str) -> bool:
-    rows = _read_notes()
-    keep = [r for r in rows if r.get("id") != nid]
-    if len(keep) == len(rows):
-        return False
-    _write_notes(keep)
-    return True
+def _write_paper(text: str, by: str = "jarvis") -> dict:
+    doc = {"text": str(text)[:200000], "updated": round(time.time(), 3), "by": by}
+    PAPER.write_text(json.dumps(doc, ensure_ascii=False))
+    return doc
 
 
 def _read_progress(subject: str | None) -> dict:
@@ -654,42 +608,24 @@ def call(name: str, args: dict) -> dict:
                                        "first": [q["id"] for q in new_sel[:10]],
                                        "you_can_repeat_with_seed": seed}, indent=1))
 
-    if name == "list_notes":
-        rows = _read_notes()
-        subj = str(args.get("subject") or "")
-        if subj:
-            rows = [r for r in rows if (r.get("subject") or "") == subj]
-        rows.sort(key=lambda r: float(r.get("updated") or 0), reverse=True)
-        limit = int(args.get("limit") or 50)
-        return text_result(json.dumps(rows[:limit], indent=1, ensure_ascii=False) if rows
-                           else "the cheat sheet is empty")
+    if name == "read_paper":
+        doc = _read_paper()
+        if not doc["text"].strip():
+            return text_result("the sheet is empty")
+        return text_result(doc["text"])
 
-    if name == "add_note":
-        title = str(args.get("title") or "").strip()
-        body = str(args.get("body") or "").strip()
-        if not title or not body:
-            return text_result("both title and body are required")
-        row = _upsert_note({"title": title, "body": body,
-                            "subject": args.get("subject"), "by": "jarvis"})
-        return text_result(json.dumps(row, indent=1, ensure_ascii=False))
-
-    if name == "edit_note":
-        nid = str(args.get("id") or "").strip()
-        if not nid:
-            return text_result("id is required")
-        patch = {k: args[k] for k in ("title", "body", "subject") if args.get(k) is not None}
-        if not patch:
-            return text_result("nothing to change: give title, body or subject")
-        patch["id"] = nid
-        patch["by"] = "jarvis"
-        row = _upsert_note(patch)
-        if row.get("id") != nid:
-            return text_result(f"no note {nid}")
-        return text_result(json.dumps(row, indent=1, ensure_ascii=False))
-
-    if name == "delete_note":
-        nid = str(args.get("id") or "").strip()
-        return text_result("deleted" if _delete_note(nid) else f"no note {nid}")
+    if name == "write_paper":
+        text = str(args.get("text") or "")
+        if not text.strip():
+            return text_result("nothing to write")
+        mode = str(args.get("mode") or "append").lower()
+        if mode == "replace":
+            doc = _write_paper(text)
+        else:
+            old = _read_paper()["text"].rstrip()
+            joined = (old + "\n" + text.strip()) if old else text.strip()
+            doc = _write_paper(joined)
+        return text_result(f"written ({mode}); the sheet is {len(doc['text'])} characters")
 
     raise KeyError(name)
 
