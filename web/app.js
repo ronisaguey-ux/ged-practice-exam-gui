@@ -691,6 +691,65 @@ function pickMention(id) {
 $("#btn-home").onclick = () => { $("#test").classList.add("hidden"); $("#home").classList.remove("hidden"); };
 $("#btn-tutor").onclick = () => $("#tutor").scrollIntoView({ behavior: "smooth" });
 
+/* ------------------------------------------------------------ tutor control
+   Jarvis can drive the page: switch view, open a question, print a line, reload
+   the bank. It queues commands in data/control.jsonl; we poll and execute. */
+let lastControlId = Number(localStorage.getItem("gedCtrl") || 0);
+
+async function pollControl() {
+  if ($("#gate") && !$("#gate").classList.contains("hidden")) return;
+  try {
+    const r = await api(`/api/control?since=${lastControlId}`);
+    const cmds = r.commands || [];
+    if (!cmds.length) return;
+    for (const c of cmds) {
+      lastControlId = Math.max(lastControlId, Number(c.id) || 0);
+      runControl(c);
+    }
+    localStorage.setItem("gedCtrl", String(lastControlId));
+  } catch (e) {
+    /* offline: try again next tick */
+  }
+}
+
+function runControl(c) {
+  const p = c.payload || {};
+  switch (c.action) {
+    case "view":
+      if (p.view === "sheet") showNotes();
+      else if (p.view === "home") { $("#test").classList.add("hidden"); $("#notes").classList.add("hidden"); $("#home").classList.remove("hidden"); boot(); }
+      else if (p.view === "test") { $("#notes").classList.add("hidden"); $("#home").classList.add("hidden"); $("#test").classList.remove("hidden"); }
+      break;
+    case "start":
+      if (p.subject) start(p.subject);
+      break;
+    case "goto":
+      if (p.id) {
+        const at = state.questions.findIndex((q) => q && q.id === p.id);
+        if (at >= 0) { state.i = at; $("#notes").classList.add("hidden"); $("#home").classList.add("hidden"); $("#test").classList.remove("hidden"); render(); saveSession(); }
+      }
+      break;
+    case "say":
+      if (p.text) addMsg("bot", String(p.text));
+      break;
+    case "reload_bank":
+      api("/api/reload").then(() => boot()).catch(() => {});
+      break;
+    case "next":
+      tryNext();
+      break;
+    case "prev":
+      if (state.i > 0) { state.i--; render(); }
+      break;
+    case "refresh":
+      loadBoard();
+      break;
+  }
+}
+
+setInterval(pollControl, 3000);
+pollControl();
+
 /* ------------------------------------------------------------ cheat sheet */
 /* A floating sheet of paper: draggable by its bar, minimisable, expandable,
    closable, and its position/size survive a reload. Autosaves; Jarvis writes
