@@ -635,6 +635,8 @@ function advance() {
 }
 
 function tryNext() {
+  const box = $("#modal");
+  if (box && !box.classList.contains("hidden")) return;   // never stack or double-fire
   const item = q();
   const answered = state.answers[`done-${item.id}`] || state.answers[`skip-${item.id}`];
   if (answered) { advance(); return; }
@@ -647,13 +649,22 @@ function openSkip(item) {
       <h3>Skip this question?</h3>
       <p>You have not answered it. Skipping costs <b>3 points</b> and does not break your streak (${state.streak}).</p>
       <div class="modal-actions">
-        <button class="ghost" id="modal-cancel">Keep working</button>
-        <button class="primary" id="modal-skip">Skip (−3)</button>
+        <button type="button" class="ghost" id="modal-cancel">Keep working</button>
+        <button type="button" class="primary" id="modal-skip">Skip (−3)</button>
       </div>
     </div>`;
   box.classList.remove("hidden");
-  $("#modal-cancel").onclick = () => box.classList.add("hidden");
-  $("#modal-skip").onclick = () => {
+  const openedAt = Date.now();
+  const cancel = $("#modal-cancel");
+  const skip = $("#modal-skip");
+  // A skip is only ever a deliberate pointer click on that button: no Enter
+  // key, no key-repeat, no stray event that arrives right after the modal opens.
+  skip.dataset.armed = "0";
+  setTimeout(() => { skip.dataset.armed = "1"; }, 600);
+  cancel.onclick = () => box.classList.add("hidden");
+  cancel.focus();
+  skip.onclick = (e) => {
+    if (!e.isTrusted || skip.dataset.armed !== "1" || Date.now() - openedAt < 600) return;
     state.points -= 3;
     state.answers[`skip-${item.id}`] = true;
     box.classList.add("hidden");
@@ -706,7 +717,13 @@ function finish() {
 
 document.addEventListener("keydown", (e) => {
   if ($("#test").classList.contains("hidden")) return;
-  if (document.activeElement && document.activeElement.id === "chatinput") return;
+  const el = document.activeElement;
+  if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+  if (!($("#modal") || {}).classList || !$("#modal").classList.contains("hidden")) {
+    // a modal is open: only Escape closes it, keys never reach the quiz
+    if (e.key === "Escape") $("#modal").classList.add("hidden");
+    return;
+  }
   const item = q();
   if (["1", "2", "3", "4"].includes(e.key) && item.type === "mcq") {
     const rows = document.querySelectorAll(".opt");
