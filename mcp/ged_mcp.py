@@ -176,7 +176,9 @@ def read_bank() -> dict:
 
 
 def write_bank(b: dict) -> None:
-    BANK.write_text(json.dumps(b, indent=1, ensure_ascii=False))
+    """The bank is stored compact (one line), like the repo has it: a one-field
+    edit must not show up as a whole-file reformat in the diff."""
+    BANK.write_text(json.dumps(b, ensure_ascii=False))
 
 
 HISTORY = DATA / "history.jsonl"
