@@ -38,9 +38,13 @@ TOOLS = [
     },
     {
         "name": "update_question",
-        "description": "Patch a question in the bank (prompt, passage, options, answer, explanation, image).",
+        "description": ("Change any question in the bank on the fly: prompt, passage, options, answer, "
+                        "accept list, explanation, image, type, subject, skill, set, due. Give the id "
+                        "and the fields to change; `reason` is recorded in data/bank_changes.jsonl so "
+                        "every edit is traceable. Returns the question after the change."),
         "inputSchema": {"type": "object", "properties": {
-            "id": {"type": "string"}, "patch": {"type": "object"}}, "required": ["id", "patch"]},
+            "id": {"type": "string"}, "patch": {"type": "object"},
+            "reason": {"type": "string"}}, "required": ["id", "patch"]},
     },
     {
         "name": "pending_requests",
@@ -87,6 +91,83 @@ TOOLS = [
         "description": "Question counts by subject and type.",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "regrade",
+        "description": ("Re-grade any attempt, on request and with a stated justification. Finds the "
+                        "attempt for a question (newest by default, `attempt` counts back: 2 = the one "
+                        "before, or `ts` picks one by timestamp) and grades it again with the same grader "
+                        "the app uses, optionally with a corrected student answer and/or a corrected "
+                        "answer key (`answer_key` also fixes the bank). With no recorded attempt it "
+                        "grades a supplied answer against the key, for 'would this have counted?'. "
+                        "`reason` is mandatory: the regrade row carries it, and the original row is "
+                        "never rewritten - a `regraded: true` row is appended."),
+        "inputSchema": {"type": "object", "properties": {
+            "id": {"type": "string", "description": "question id, e.g. math-014"},
+            "attempt": {"type": "integer", "description": "1 = newest (default), 2 = the one before, ..."},
+            "ts": {"type": "number", "description": "pick the attempt nearest this timestamp instead"},
+            "given": {"type": "string", "description": "the answer to grade (default: what they gave)"},
+            "answer_key": {"type": "string", "description": "corrected expected answer, also written to the bank"},
+            "reason": {"type": "string", "description": "why this regrade is justified (required)"}},
+            "required": ["id", "reason"]},
+    },
+    {
+        "name": "award_points",
+        "description": ("Give the student points by hand (streak recoveries, good explanations, a "
+                        "question they got right that was marked wrong). Writes to the session "
+                        "counter and to an append-only ledger; returns the new total."),
+        "inputSchema": {"type": "object", "properties": {
+            "points": {"type": "integer", "description": "how many points to add (positive)"},
+            "subject": {"type": "string", "description": "session to credit (default: the live session)"},
+            "as_if_correct": {"type": "boolean", "description": "award exactly what the app's scoring would give: 1 + the current streak"},
+            "reason": {"type": "string"}},
+            "required": ["reason"]},
+    },
+    {
+        "name": "deduct_points",
+        "description": ("Take points away by hand (a question answered off the key, a duplicate "
+                        "attempt). Never goes below zero. Writes to the session counter and the "
+                        "append-only ledger; returns the new total."),
+        "inputSchema": {"type": "object", "properties": {
+            "points": {"type": "integer", "description": "how many points to remove (positive number)"},
+            "subject": {"type": "string", "description": "session to debit (default: the live session)"},
+            "as_if_miss": {"type": "boolean", "description": "deduct exactly what a miss costs: 1 + the current streak, streak reset to 0"},
+            "reason": {"type": "string"}},
+            "required": ["reason"]},
+    },
+    {
+        "name": "point_ledger",
+        "description": "Recent manual point adjustments (newest last): points, reason, subject, resulting total.",
+        "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer"}}},
+    },
+    {
+        "name": "reorder_questions",
+        "description": ("Put questions in an explicit order. Give a list of ids (optionally filtered to "
+                        "one subject or set) and they are moved to the front in exactly that order; the "
+                        "rest keep their relative order. Use it to fix a bad sequence or to line up a "
+                        "lesson. `reason` is logged."),
+        "inputSchema": {"type": "object", "properties": {
+            "order": {"type": "array", "items": {"type": "string"}},
+            "subject": {"type": "string"}, "set": {"type": "string"},
+            "reason": {"type": "string"}}, "required": ["order"]},
+    },
+    {
+        "name": "move_question",
+        "description": "Move one question to a 0-based position in the bank order.",
+        "inputSchema": {"type": "object", "properties": {
+            "id": {"type": "string"}, "position": {"type": "integer"},
+            "reason": {"type": "string"}}, "required": ["id", "position"]},
+    },
+    {
+        "name": "shuffle_questions",
+        "description": ("Shuffle the order questions are served in. A `seed` makes it repeatable (same "
+                        "seed, same order); `keep_sets` (default true) keeps a passage set together, "
+                        "exactly like the app's own random mode. Scope with `subject` or `set`, or "
+                        "shuffle the whole bank. Returns the first 10 ids of the new order."),
+        "inputSchema": {"type": "object", "properties": {
+            "subject": {"type": "string"}, "set": {"type": "string"},
+            "seed": {"type": "integer"}, "keep_sets": {"type": "boolean"},
+            "reason": {"type": "string"}}},
+    },
 ]
 
 
@@ -96,6 +177,84 @@ def read_bank() -> dict:
 
 def write_bank(b: dict) -> None:
     BANK.write_text(json.dumps(b, indent=1, ensure_ascii=False))
+
+
+HISTORY = DATA / "history.jsonl"
+SESSIONS = DATA / "sessions"
+SESSIONS.mkdir(parents=True, exist_ok=True)
+LEDGER = DATA / "adjustments.jsonl"
+
+
+def _grade(q: dict, given: str) -> tuple[bool | None, str]:
+    """One grader, owned by the app. Imported rather than re-implemented so a
+    correction can never disagree with the verdict the student was shown."""
+    sys.path.insert(0, str(ROOT))
+    import server as S  # noqa: PLC0415 - local by design, server owns the rules
+
+    return S.grade(q, given)
+
+
+def _history_rows() -> list[dict]:
+    rows: list[dict] = []
+    if not HISTORY.exists():
+        return rows
+    for line in HISTORY.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except Exception:
+            continue
+    return rows
+
+
+def _session_path(subject: str | None) -> Path:
+    if subject:
+        return SESSIONS / f"{subject}.json"
+    return DATA / "session.json"
+
+
+def _apply_points(subject: str | None, delta: int, reason: str, streak: int | None = None) -> dict:
+    """Move a session's point counter and record the move. Points never go
+    below zero: a deduction larger than the balance takes what is there.
+    `streak` (optional) also writes the session's streak counter, which is what
+    the app's own award() does on a hit or a miss."""
+    path = _session_path(subject)
+    doc: dict = {}
+    if path.exists():
+        try:
+            doc = json.loads(path.read_text())
+        except Exception:
+            doc = {}
+    prog = dict(doc.get("progress") or {})
+    before = int(prog.get("points") or 0)
+    after = max(0, before + int(delta))
+    applied = after - before
+    prog["points"] = after
+    if streak is not None:
+        prog["streak"] = int(streak)
+    doc["progress"] = prog
+    doc["updated"] = time.time()
+    path.write_text(json.dumps(doc, indent=1))
+    entry = {"ts": round(time.time(), 3), "subject": subject or prog.get("subject") or "live",
+             "requested": int(delta), "applied": applied, "before": before, "after": after,
+             "reason": str(reason)[:300]}
+    if streak is not None:
+        entry["streak_after"] = int(streak)
+    with LEDGER.open("a") as fh:
+        fh.write(json.dumps(entry) + "\n")
+    return entry
+
+
+def _read_progress(subject: str | None) -> dict:
+    path = _session_path(subject)
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text()).get("progress") or {}
+    except Exception:
+        return {}
 
 
 def text_result(text: str) -> dict:
@@ -119,11 +278,23 @@ def call(name: str, args: dict) -> dict:
         return text_result(f"no question {args.get('id')}")
 
     if name == "update_question":
+        patch = args.get("patch") or {}
+        allowed = {"prompt", "passage", "options", "answer", "accept", "explanation", "image",
+                   "type", "subject", "skill", "set", "due"}
+        unknown = [k for k in patch if k not in allowed]
+        if unknown:
+            return text_result(f"unknown field(s): {', '.join(unknown)}; allowed: {', '.join(sorted(allowed))}")
         b = read_bank()
         for q in b["questions"]:
             if q["id"] == args.get("id"):
-                q.update(args.get("patch") or {})
+                before = {k: q.get(k) for k in patch}
+                q.update(patch)
                 write_bank(b)
+                with (DATA / "bank_changes.jsonl").open("a") as fh:
+                    fh.write(json.dumps({"ts": round(time.time(), 3), "id": q["id"],
+                                         "fields": sorted(patch), "before": before,
+                                         "after": {k: q.get(k) for k in patch},
+                                         "reason": str(args.get("reason") or "")[:300]}) + "\n")
                 return text_result(json.dumps(q, indent=1, ensure_ascii=False))
         return text_result(f"no question {args.get('id')}")
 
@@ -229,6 +400,173 @@ def call(name: str, args: dict) -> dict:
             by_t[q["type"]] = by_t.get(q["type"], 0) + 1
         return text_result(json.dumps({"total": len(b["questions"]), "by_subject": by_s,
                                        "by_type": by_t}, indent=1))
+
+    if name == "regrade":
+        qid = str(args.get("id") or "").strip()
+        reason = str(args.get("reason") or "").strip()
+        if not reason:
+            return text_result("reason is required: say why this regrade is justified")
+        bank = read_bank()
+        q = next((x for x in bank["questions"] if x["id"] == qid), None)
+        if not q:
+            return text_result(f"no question {qid}")
+        rows = _history_rows()
+        cands = sorted((r for r in rows if r.get("id") == qid),
+                       key=lambda r: float(r.get("ts") or 0))
+        row = None
+        if cands:
+            if args.get("ts") is not None:
+                want = float(args["ts"])
+                row = min(cands, key=lambda r: abs(float(r.get("ts") or 0) - want))
+            else:
+                back = max(1, int(args.get("attempt") or 1))
+                if back <= len(cands):
+                    row = cands[-back]
+                else:
+                    return text_result(
+                        f"{qid} has {len(cands)} recorded attempt(s); attempt {back} does not exist")
+        elif args.get("given") is None:
+            return text_result(f"no attempt recorded for {qid} and no `given` answer to grade")
+        key_changed = None
+        if args.get("answer_key") is not None:
+            key_changed = {"from": q.get("answer"), "to": args["answer_key"]}
+            q["answer"] = args["answer_key"]
+            q.setdefault("accept", [])
+            write_bank(bank)
+        given = args.get("given") if args.get("given") is not None else (row or {}).get("given", "")
+        correct, expected = _grade(q, str(given))
+        prev = (row or {}).get("correct")
+        entry = {
+            "ts": round(time.time(), 3), "id": qid, "subject": q.get("subject"),
+            "type": q.get("type"), "skill": q.get("skill") or "",
+            "correct": correct, "given": str(given)[:400], "expected": str(expected)[:400],
+            "regraded": True, "regraded_ts": (row or {}).get("ts"), "previous_correct": prev,
+            "reason": reason[:300],
+        }
+        with HISTORY.open("a") as fh:
+            fh.write(json.dumps(entry) + "\n")
+        return text_result(json.dumps(
+            {"regraded": qid, "attempt_ts": (row or {}).get("ts"),
+             "student_gave": str(given)[:200], "was": prev, "now": correct,
+             "expected": expected, "answer_key_change": key_changed,
+             "attempts_on_record": len(cands)}, indent=1, ensure_ascii=False))
+
+    if name == "award_points":
+        reason = str(args.get("reason") or "award")
+        if args.get("as_if_correct"):
+            streak = int(_read_progress(args.get("subject")).get("streak") or 0)
+            gain = 1 + streak
+            e = _apply_points(args.get("subject"), gain, reason, streak=streak + 1)
+            e["scoring"] = f"+1 plus +{streak} streak = +{gain}"
+            return text_result(json.dumps(e, indent=1))
+        pts = int(args.get("points") or 0)
+        if pts <= 0:
+            return text_result("points must be a positive number (or pass as_if_correct: true)")
+        e = _apply_points(args.get("subject"), pts, reason)
+        return text_result(json.dumps(e, indent=1))
+
+    if name == "deduct_points":
+        reason = str(args.get("reason") or "deduction")
+        if args.get("as_if_miss"):
+            streak = int(_read_progress(args.get("subject")).get("streak") or 0)
+            loss = 1 + streak
+            e = _apply_points(args.get("subject"), -loss, reason, streak=0)
+            e["scoring"] = f"-1 minus {streak} streak = -{loss}, streak reset"
+            return text_result(json.dumps(e, indent=1))
+        pts = int(args.get("points") or 0)
+        if pts <= 0:
+            return text_result("points must be a positive number (or pass as_if_miss: true)")
+        e = _apply_points(args.get("subject"), -pts, reason)
+        return text_result(json.dumps(e, indent=1))
+
+    if name == "point_ledger":
+        limit = int(args.get("limit") or 20)
+        entries: list[dict] = []
+        if LEDGER.exists():
+            for line in LEDGER.read_text().splitlines()[-limit:]:
+                try:
+                    entries.append(json.loads(line))
+                except Exception:
+                    continue
+        return text_result(json.dumps(entries, indent=1, ensure_ascii=False) if entries
+                           else "no manual adjustments yet")
+
+    if name == "reorder_questions":
+        order = [str(x) for x in (args.get("order") or [])]
+        if not order:
+            return text_result("give at least one question id in `order`")
+        b = read_bank()
+        qs = b["questions"]
+        by_id = {q["id"]: q for q in qs}
+        missing = [i for i in order if i not in by_id]
+        if missing:
+            return text_result(f"unknown id(s): {', '.join(missing[:10])}")
+        subj, setname = args.get("subject"), args.get("set")
+        head = [by_id[i] for i in order
+                if (not subj or by_id[i].get("subject") == subj)
+                and (not setname or by_id[i].get("set") == setname)]
+        if not head:
+            return text_result("none of those ids match the subject/set filter")
+        picked = {id(q) for q in head}
+        b["questions"] = head + [q for q in qs if id(q) not in picked]
+        write_bank(b)
+        with (DATA / "bank_changes.jsonl").open("a") as fh:
+            fh.write(json.dumps({"ts": round(time.time(), 3), "id": "order", "fields": ["order"],
+                                 "before": None, "after": order,
+                                 "reason": str(args.get("reason") or "")[:300]}) + "\n")
+        return text_result(json.dumps({"reordered": len(head), "first": order[:10]}, indent=1))
+
+    if name == "move_question":
+        qid = str(args.get("id") or "")
+        pos = int(args.get("position") or 0)
+        b = read_bank()
+        qs = b["questions"]
+        idx = next((i for i, q in enumerate(qs) if q["id"] == qid), None)
+        if idx is None:
+            return text_result(f"no question {qid}")
+        q = qs.pop(idx)
+        pos = max(0, min(pos, len(qs)))
+        qs.insert(pos, q)
+        write_bank(b)
+        with (DATA / "bank_changes.jsonl").open("a") as fh:
+            fh.write(json.dumps({"ts": round(time.time(), 3), "id": qid, "fields": ["position"],
+                                 "before": idx, "after": pos,
+                                 "reason": str(args.get("reason") or "")[:300]}) + "\n")
+        return text_result(f"{qid} moved from index {idx} to {pos}")
+
+    if name == "shuffle_questions":
+        import random as _r
+        seed = args.get("seed")
+        rnd = _r.Random(int(seed)) if seed is not None else _r.Random()
+        keep_sets = args.get("keep_sets")
+        keep_sets = True if keep_sets is None else bool(keep_sets)
+        subj, setname = args.get("subject"), args.get("set")
+        b = read_bank()
+        qs = b["questions"]
+        sel = [q for q in qs if (not subj or q.get("subject") == subj)
+               and (not setname or q.get("set") == setname)]
+        if len(sel) < 2:
+            return text_result("nothing to shuffle in that scope")
+        groups: dict[str, list] = {}
+        for q in sel:
+            key = (q.get("set") or q["id"]) if keep_sets else q["id"]
+            groups.setdefault(key, []).append(q)
+        buckets = list(groups.values())
+        rnd.shuffle(buckets)
+        new_sel = [q for g in buckets for q in (g if keep_sets else g)]
+        if not keep_sets:
+            rnd.shuffle(new_sel)
+        it = iter(new_sel)
+        b["questions"] = [next(it) if q in sel else q for q in qs]
+        write_bank(b)
+        with (DATA / "bank_changes.jsonl").open("a") as fh:
+            fh.write(json.dumps({"ts": round(time.time(), 3), "id": "shuffle", "fields": ["order"],
+                                 "before": None, "after": [q["id"] for q in new_sel[:20]],
+                                 "reason": str(args.get("reason") or "")[:300],
+                                 "seed": seed, "keep_sets": keep_sets}) + "\n")
+        return text_result(json.dumps({"shuffled": len(new_sel),
+                                       "first": [q["id"] for q in new_sel[:10]],
+                                       "you_can_repeat_with_seed": seed}, indent=1))
 
     raise KeyError(name)
 
