@@ -102,8 +102,11 @@ function ctx() {
   };
 }
 
+let lastSaveAt = 0;
+
 function saveSession() {
   if (state.offline) return;
+  lastSaveAt = Date.now() / 1000;
   api("/api/session", {
     subject: state.subject,
     progress: { index: state.i + 1, total: state.questions.length, points: state.points,
@@ -112,6 +115,41 @@ function saveSession() {
              score: state.score, asked: state.asked, points: state.points, streak: state.streak },
   }).catch(() => {});
 }
+
+/* Jarvis can adjust points while you are mid-session (a regrade, a manual
+   award). The page owns the counters, so without this the next autosave would
+   quietly overwrite his change and the UIS would never show it. Poll the session
+   and adopt any write that is newer than ours. */
+let syncing = false;
+
+async function syncExternal() {
+  if (state.offline || syncing || $("#test").classList.contains("hidden")) return;
+  syncing = true;
+  try {
+    const doc = await api(`/api/session/${state.subject}`);
+    const prog = doc.progress || {};
+    const stamp = Number(doc.updated || 0);
+    if (stamp > lastSaveAt + 0.4 && prog.points !== undefined) {
+      const before = state.points;
+      const beforeStreak = state.streak;
+      state.points = Number(prog.points) || 0;
+      state.streak = Number(prog.streak || 0);
+      paintScore();
+      lastSaveAt = stamp;
+      if (state.points !== before) {
+        const d = state.points - before;
+        addMsg("bot", `Score updated: ${before} → ${state.points} pts (${d > 0 ? "+" : ""}${d}).`
+          + (state.streak !== beforeStreak ? ` Streak is now ${state.streak}.` : ""));
+      }
+    }
+  } catch (e) {
+    /* offline or no session yet - nothing to adopt */
+  } finally {
+    syncing = false;
+  }
+}
+
+setInterval(syncExternal, 8000);
 
 document.addEventListener("click", (e) => {
   if (e.target && e.target.id === "btn-board") loadBoard();

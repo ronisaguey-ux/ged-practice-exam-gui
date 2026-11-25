@@ -369,7 +369,8 @@ class Handler(BaseHTTPRequestHandler):
                     d = json.loads(f.read_text())
                 except Exception:
                     continue
-                out[f.stem] = {"updated": d.get("updated"), "progress": d.get("progress")}
+                out[f.stem] = {"updated": d.get("updated"), "progress": d.get("progress"),
+                               "state": d.get("state")}
             self._json(out)
             return
         if path.startswith("/api/session/"):
