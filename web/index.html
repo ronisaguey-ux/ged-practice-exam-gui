@@ -17,6 +17,7 @@
     <span id="streak" class="pill">streak 0</span>
     <span id="score" class="pill">0 / 0</span>
     <button id="btn-home" class="ghost">Subjects</button>
+    <button id="btn-notes" class="ghost">Cheat sheet</button>
     <button id="btn-tutor" class="ghost">Jarvis</button>
   </div>
 </header>
@@ -35,6 +36,39 @@
   <h1>Pick a subject</h1>
   <p class="sub">Questions come in random order. Passages, tables and diagrams are part of the question — read them first.</p>
   <div id="subjects" class="cards"></div>
+  <section id="board" class="board">
+    <div class="board-head">
+      <h2>Scoreboard</h2>
+      <button id="btn-board" class="ghost">Refresh</button>
+    </div>
+    <div class="tables">
+      <table id="scoretable" class="table">
+        <thead><tr><th>Subject</th><th>Asked</th><th>Correct</th><th>Accuracy</th><th>Points</th><th>Best streak</th></tr></thead>
+        <tbody><tr><td colspan="6" class="muted">No attempts yet.</td></tr></tbody>
+      </table>
+      <table id="historytable" class="table">
+        <thead><tr><th>When</th><th>Subject</th><th>Question</th><th>You</th><th>Result</th></tr></thead>
+        <tbody><tr><td colspan="5" class="muted">Nothing answered yet.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<main id="notes" class="home hidden">
+  <h1>Cheat sheet</h1>
+  <p class="sub">Your notes and the ones Jarvis writes when it teaches you something worth keeping. Edit anything here, or ask Jarvis in the chat to add or fix a note.</p>
+  <form id="noteform" class="noteform">
+    <input id="notetitle" type="text" placeholder="Title — e.g. Slope from two points" maxlength="200">
+    <input id="notesubject" type="text" placeholder="Subject (optional): math, rla, science, social_studies" maxlength="40">
+    <textarea id="notebody" placeholder="The note itself. Anything you want to remember." rows="4"></textarea>
+    <div class="noteform-actions">
+      <button class="primary" type="submit" id="notesave">Save note</button>
+      <button class="ghost" type="button" id="noteclear">Clear</button>
+      <span id="notestatus" class="muted"></span>
+    </div>
+  </form>
+  <div id="notelist" class="notes"></div>
 </main>
 
 <main id="test" class="test hidden">
