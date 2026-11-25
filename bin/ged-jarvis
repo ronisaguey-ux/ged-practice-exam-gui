@@ -15,7 +15,7 @@ SESSION=jarvis
 CONFIG_HOME="$HOME/.config/ged-tutor"
 APP="/home/roni/Roni_workspace/ged-practice-exam-gui"
 SID_FILE="$HOME/.local/state/opencode/ged_tutor_session"
-DEFAULT_SID="ses_df5a439b5ffeQObZYbRjBuQcm7"
+DEFAULT_SID="ses_jarvisr2"
 mkdir -p "$(dirname "$SID_FILE")"
 [ -s "$SID_FILE" ] || printf '%s\n' "$DEFAULT_SID" > "$SID_FILE"
 SID="$(head -1 "$SID_FILE" | tr -d '[:space:]')"
