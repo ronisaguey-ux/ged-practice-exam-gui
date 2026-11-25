@@ -627,7 +627,7 @@ function paperPanel() { return $("#notes"); }
 
 function paperGeometrySave() {
   const el = paperPanel();
-  const r = el.getBoundingClientRect();
+  const r = (el.classList.contains("min") && paperBeforeMin) ? paperBeforeMin : el.getBoundingClientRect();
   localStorage.setItem("gedPaper", JSON.stringify({
     left: r.left, top: r.top, width: r.width, height: r.height,
     min: el.classList.contains("min") ? 0 : 1,
@@ -730,22 +730,76 @@ async function savePaper(by) {
   });
 })();
 
+/* the bar buttons act on the panel's real size, not just a class, because the
+   panel carries inline geometry from the last drag/resize */
+let paperBeforeMin = null;
+let paperBeforeMax = null;
+
+function takeGeometry() {
+  const r = paperPanel().getBoundingClientRect();
+  return { left: r.left, top: r.top, width: r.width, height: r.height };
+}
+function applyGeometry(g) {
+  const el = paperPanel();
+  el.style.left = g.left + "px";
+  el.style.top = g.top + "px";
+  el.style.right = "auto";
+  el.style.bottom = "auto";
+  el.style.width = g.width + "px";
+  el.style.height = g.height + "px";
+}
+
 $("#paper-min").onclick = () => {
   const el = paperPanel();
-  el.classList.toggle("min");
-  el.classList.remove("max");
+  if (el.classList.contains("min")) {
+    el.classList.remove("min");
+    if (paperBeforeMin) applyGeometry(paperBeforeMin);
+    paperBeforeMin = null;
+  } else {
+    paperBeforeMin = takeGeometry();
+    el.classList.remove("max");
+    el.classList.add("min");
+    el.style.height = "38px";
+  }
   paperGeometrySave();
 };
+
 $("#paper-max").onclick = () => {
   const el = paperPanel();
-  el.classList.toggle("max");
-  el.classList.remove("min");
+  if (el.classList.contains("max")) {
+    el.classList.remove("max");
+    if (paperBeforeMax) applyGeometry(paperBeforeMax);
+    paperBeforeMax = null;
+  } else {
+    paperBeforeMax = takeGeometry();
+    el.classList.remove("min");
+    el.classList.add("max");
+    el.style.left = (window.innerWidth * 0.02) + "px";
+    el.style.top = (window.innerHeight * 0.02) + "px";
+    el.style.right = "auto";
+    el.style.bottom = "auto";
+    el.style.width = (window.innerWidth * 0.96) + "px";
+    el.style.height = (window.innerHeight * 0.96) + "px";
+  }
   paperGeometrySave();
 };
+
 $("#paper-close").onclick = () => {
   paperPanel().classList.add("hidden");
   paperGeometrySave();
 };
+
+/* manual resize (the browser's own corner grip): remember whatever size the
+   student drags the panel to */
+let paperResizeTimer = null;
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(() => {
+    const el = paperPanel();
+    if (el.classList.contains("hidden") || el.classList.contains("min")) return;
+    clearTimeout(paperResizeTimer);
+    paperResizeTimer = setTimeout(paperGeometrySave, 250);
+  }).observe(paperPanel());
+}
 
 $("#btn-notes").onclick = showNotes;
 $("#paper").addEventListener("input", () => {

@@ -161,13 +161,13 @@ textarea{min-height:110px;resize:vertical}
 @media (max-width:640px){.table{font-size:11.5px}.table td.q{max-width:180px}}
 
 /* ------------------------------------------------ cheat sheet: a floating sheet */
-.sheetwrap{position:fixed;right:22px;bottom:22px;width:470px;height:430px;min-width:280px;min-height:150px;
+.sheetwrap{position:fixed;right:22px;bottom:22px;width:470px;height:430px;min-width:260px;min-height:38px;
   display:flex;flex-direction:column;background:#fffdf7;border:1px solid #cfcabb;border-radius:3px;
-  box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:60;overflow:hidden}
+  box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:60;overflow:hidden;resize:both}
 .sheetwrap.hidden{display:none}
-.sheetwrap.min{height:38px;min-height:38px}
+.sheetwrap.min{height:38px!important;min-height:38px!important;resize:none}
 .sheetwrap.min .paper{display:none}
-.sheetwrap.max{left:4vw;top:4vh;right:auto;bottom:auto;width:92vw;height:88vh}
+.sheetwrap.max{left:2vw!important;top:2vh!important;right:auto;bottom:auto;width:96vw!important;height:96vh!important}
 .paperbar{display:flex;align-items:center;gap:8px;height:38px;padding:0 8px 0 12px;cursor:move;
   background:#f1ecdd;border-bottom:1px solid #e2dccb;user-select:none}
 .papertitle{font:600 12.5px/1 system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#6b6455}
