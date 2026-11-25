@@ -726,7 +726,21 @@ function runControl(c) {
     case "goto":
       if (p.id) {
         const at = state.questions.findIndex((q) => q && q.id === p.id);
-        if (at >= 0) { state.i = at; $("#notes").classList.add("hidden"); $("#home").classList.add("hidden"); $("#test").classList.remove("hidden"); render(); saveSession(); }
+        if (at >= 0) {
+          state.i = at;
+          $("#notes").classList.add("hidden");
+          $("#home").classList.add("hidden");
+          $("#test").classList.remove("hidden");
+          render();
+          saveSession();
+        } else {
+          // not in this run (a variant that is not due yet, or another subject):
+          // say so instead of doing nothing
+          const known = (state.bank.questions || []).some((q) => q.id === p.id);
+          addMsg("bot", known
+            ? `${p.id} is not in your current run (variants are only served when their timer is due).`
+            : `There is no question ${p.id} in the bank.`);
+        }
       }
       break;
     case "say":
