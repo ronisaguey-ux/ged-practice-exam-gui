@@ -16,6 +16,9 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import calc_mcp as CALC  # noqa: E402 - the calculator lives beside this file
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 BANK = DATA / "questions.json"
@@ -168,6 +171,7 @@ TOOLS = [
             "seed": {"type": "integer"}, "keep_sets": {"type": "boolean"},
             "reason": {"type": "string"}}},
     },
+    *CALC.TOOLS,
     {
         "name": "read_paper",
         "description": ("The student's cheat sheet - one plain sheet of paper that you and the student "
@@ -607,6 +611,9 @@ def call(name: str, args: dict) -> dict:
         return text_result(json.dumps({"shuffled": len(new_sel),
                                        "first": [q["id"] for q in new_sel[:10]],
                                        "you_can_repeat_with_seed": seed}, indent=1))
+
+    if name in {t["name"] for t in CALC.TOOLS}:
+        return text_result(CALC.call(name, args))
 
     if name == "read_paper":
         doc = _read_paper()
